@@ -48,6 +48,13 @@ let currentComments     = [];
 //   assignmentFilesList, commentList, commentForm, newCommentInput.
 
 // --- Functions ---
+let assignmentTitle= document.getElementById("assignment-title");
+let assignmentDueDate= document.getElementById("assignment-due-date");
+let assignmentDescription= document.getElementById("assignment-description");
+let assignmentFilesList= document.getElementById("assignment-files-list");
+let commentList= document.getElementById("comment-list");
+let commentForm= document.getElementById("comment-form");
+let newCommentInput= document.getElementById("new-comment");
 
 /**
  * TODO: Implement getAssignmentIdFromURL.
@@ -60,6 +67,9 @@ let currentComments     = [];
  */
 function getAssignmentIdFromURL() {
   // ... your implementation here ...
+  let reading= window.location.search;
+  let searchParams= new URLSearchParams(reading);
+  return searchParams.get("id");
 }
 
 /**
@@ -80,6 +90,18 @@ function getAssignmentIdFromURL() {
  */
 function renderAssignmentDetails(assignment) {
   // ... your implementation here ...
+  assignmentTitle.textContent= assignment.title;
+  assignmentDueDate.textContent= "Due: " + assignment.due_date;
+  assignmentDescription.textContent = assignment.description;
+  assignmentFilesList.innerHTML= "";
+  assignment.files.forEach(function(url){
+    let lItem= document.createElement("li");
+    let aLink= document.createElement("a");
+    aLink.href= url;
+    aLink.textContent=url;
+    lItem.appendChild(aLink);
+    assignmentFilesList.appendChild(lItem);
+  });
 }
 
 /**
@@ -97,6 +119,14 @@ function renderAssignmentDetails(assignment) {
  */
 function createCommentArticle(comment) {
   // ... your implementation here ...
+  let article= document.createElement("article");
+  let p= document.createElement("p");
+  p.textContent= comment.text;
+  let footer= document.createElement("footer");
+  footer.textContent= "Posted by: " + comment.author;
+  article.appendChild(p);
+  article.appendChild(footer);
+  return article;
 }
 
 /**
@@ -110,6 +140,11 @@ function createCommentArticle(comment) {
  */
 function renderComments() {
   // ... your implementation here ...
+  commentList.innerHTML= "";
+  currentComments.forEach(function(comment){
+    let a = createCommentArticle(comment);
+    commentList.appendChild(a);
+  });
 }
 
 /**
@@ -135,6 +170,28 @@ function renderComments() {
  */
 async function handleAddComment(event) {
   // ... your implementation here ...
+  event.preventDefault();
+  let com= newCommentInput.value.trim();
+  if (com=== ""){
+    return;
+  }
+  let send_1 = await fetch("./api/index.php?action=comment",{
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      assignment_id: Number(currentAssignmentId),
+      author: "Student",
+      text: com
+    })
+  });
+  let result= await send_1.json();
+  if (result.success === true){
+    currentComments.push(result.data);
+    renderComments();
+    newCommentInput.value= "";
+  }
 }
 
 /**
@@ -164,6 +221,29 @@ async function handleAddComment(event) {
  */
 async function initializePage() {
   // ... your implementation here ...
+  currentAssignmentId= getAssignmentIdFromURL();
+  if (currentAssignmentId === null || currentAssignmentId === ""){
+  assignmentTitle.textContent = "Assignment not found.";
+    return;
+  }
+  let send_1 = await Promise.all([
+    fetch("./api/index.php?id="+ currentAssignmentId),
+    fetch("./api/index.php?action=comments&assignment_id="+ currentAssignmentId)
+  ]);
+  let assignmentResult= await send_1[0].json();
+  let commentResult= await send_1[1].json();
+  if (commentResult.success === true){
+    currentComments = commentResult.data;
+  } else {
+    currentComments = [];
+  }
+  if (assignmentResult.success === true && assignmentResult.data){
+    renderAssignmentDetails(assignmentResult.data);
+    renderComments();
+    commentForm.addEventListener("submit", handleAddComment);
+  } else{
+    assignmentTitle.textContent = "Assignment not found.";
+  }
 }
 
 // --- Initial Page Load ---
