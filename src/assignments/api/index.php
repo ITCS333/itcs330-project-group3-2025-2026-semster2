@@ -158,13 +158,20 @@ function getAllAssignments(PDO $db): void
     // TODO: Append ORDER BY {sort} {order} to the query.
     $query= $query. " ORDER BY " . $sort. " ". $order;
     // TODO: Prepare, bind (if searching), and execute the statement.
-    
+    $statement= $db->prepare($query); 
+    $statement ->execute($params); 
     // TODO: Fetch all rows as an associative array.
-
+    $assignments= $statement->fetchAll(PDO::FETCH_ASSOC);
     // TODO: For each row, decode the files column:
     // $row['files'] = json_decode($row['files'], true) ?? [];
-
+    foreach ($assignments as &$row){
+        $row['files']= json_decode($row['files'],true);
+        if($row['files']===null){
+            $row['files']=[];
+        }
+    }
     // TODO: Call sendResponse(['success' => true, 'data' => $assignments]);
+    sendResponse(['success' => true, 'data' => $assignments]);
 }
 
 
