@@ -1,1 +1,195 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #faf8ff;
+      --surface: #ffffff;
+      --border:  #e8e0f5;
+      --accent:  #9b6dff;
+      --soft:    #f3eeff;
+      --text:    #2d2040;
+      --muted:   #8b7aab;
+      --error:   #e05c7a;
+      --success: #5bb88a;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    main { width: 100%; max-width: 420px; }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      color: var(--accent);
+      font-size: 1.1rem;
+      text-align: center;
+      margin-bottom: 2rem;
+      text-decoration: none;
+      display: block;
+    }
+
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(155,109,255,0.08);
+    }
+
+    section::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), #c9a7ff);
+      border-radius: 20px 20px 0 0;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 2rem; }
+
+    form { width: 100%; }
+
+    fieldset { border: none; padding: 0; display: flex; flex-direction: column; gap: 1.2rem; }
+
+    legend { display: none; }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    input {
+      width: 100%;
+      background: var(--soft);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(155,109,255,0.12);
+      background: #fff;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 100px;
+      padding: 0.85rem;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 0.5rem;
+    }
+
+    button[type="submit"]:hover { opacity: 0.88; }
+    button[type="submit"]:active { transform: scale(0.99); }
+
+    #message-container {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: none;
+    }
+
+    #message-container.error {
+      display: block;
+      background: rgba(224,92,122,0.08);
+      border: 1px solid rgba(224,92,122,0.25);
+      color: var(--error);
+    }
+
+    #message-container.success {
+      display: block;
+      background: rgba(91,184,138,0.08);
+      border: 1px solid rgba(91,184,138,0.25);
+      color: var(--success);
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .back-link a { color: var(--accent); text-decoration: none; font-weight: 700; }
+    .back-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <main>
+    <a href="../../index.html" class="logo">ITCS330</a>
+
+    <section>
+      <h1>Welcome Back!</h1>
+      <p class="subtitle">Sign in to access the course portal</p>
+
+      <form id="login-form" action="#">
+        <fieldset>
+          <legend>Secure Login</legend>
+
+          <div>
+            <label for="email">Email Address</label>
+            <input type="email" id="email" placeholder="you@uob.edu.bh" required>
+          </div>
+
+          <div>
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Min. 8 characters" minlength="8" required>
+          </div>
+
+          <button type="submit" id="login">Log In</button>
+
+          <div id="message-container"></div>
+        </fieldset>
+      </form>
+    </section>
+
+    <div class="back-link">
+      <a href="../../index.html">Back to Home</a>
+    </div>
+  </main>
+
+  <script src="login.js" defer></script>
+</body>
+</html>

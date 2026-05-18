@@ -1,1 +1,127 @@
-/* CSS Styles */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Playfair+Display:wght@600&display=swap');
+
+:root {
+  --bg:      #faf8ff;
+  --surface: #ffffff;
+  --border:  #e8e0f5;
+  --accent:  #9b6dff;
+  --accent2: #c9a7ff;
+  --soft:    #f3eeff;
+  --text:    #2d2040;
+  --muted:   #8b7aab;
+  --error:   #e05c7a;
+  --success: #5bb88a;
+  --radius:  14px;
+  --font-main: 'Nunito', sans-serif;
+  --font-display: 'Playfair Display', serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main);
+  min-height: 100vh;
+}
+
+a { color: var(--accent); text-decoration: none; transition: opacity 0.2s; }
+a:hover { opacity: 0.8; }
+
+input, select, textarea {
+  width: 100%;
+  background: var(--soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(155,109,255,0.12);
+  background: #fff;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-main);
+  border: none;
+  border-radius: 100px;
+  font-weight: 700;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+button:hover { opacity: 0.85; }
+button:active { transform: scale(0.99); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+}
+
+.btn-danger {
+  background: rgba(224,92,122,0.1);
+  color: var(--error);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge-admin { background: var(--soft); color: var(--accent); }
+.badge-student { background: #f0edf7; color: var(--muted); }
+
+.msg-error {
+  background: rgba(224,92,122,0.08);
+  border: 1px solid rgba(224,92,122,0.25);
+  color: var(--error);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.msg-success {
+  background: rgba(91,184,138,0.08);
+  border: 1px solid rgba(91,184,138,0.25);
+  color: var(--success);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+thead { background: var(--soft); border-bottom: 1px solid var(--border); }
+
+th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 700;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+}
+
+th:hover { color: var(--accent); }
+
+td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
+
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: rgba(155,109,255,0.04); }

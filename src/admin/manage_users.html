@@ -1,150 +1,337 @@
-<!--
-  Requirement: Create a Responsive Admin Portal
-
-  Instructions:
-  Fill in the HTML elements as described in the comments.
-  Use the provided IDs for the elements that require them.
-  Focus on creating a clear and semantic HTML structure.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- TODO: Add the 'meta' tag for character encoding (UTF-8). -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #faf8ff;
+      --surface: #ffffff;
+      --border:  #e8e0f5;
+      --accent:  #9b6dff;
+      --accent2: #c9a7ff;
+      --soft:    #f3eeff;
+      --text:    #2d2040;
+      --muted:   #8b7aab;
+      --error:   #e05c7a;
+      --success: #5bb88a;
+      --radius:  14px;
+    }
 
-    <!-- TODO: Add the responsive 'viewport' meta tag. -->
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    <!-- TODO: Add a 'title' for the page, e.g., "Admin Portal". -->
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      min-height: 100vh;
+    }
 
-    <!-- TODO: Link to a CSS file or a CSS framework. -->
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1.2rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
 
-    <!-- TODO: Add a <script> tag that loads 'manage_users.js' with the 'defer' attribute.
-         Example: <script src="manage_users.js" defer></script> -->
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      color: var(--accent);
+    }
 
+    header a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    header a:hover { color: var(--accent); }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(155,109,255,0.06);
+    }
+
+    section::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 20px 20px 0 0;
+    }
+
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h3 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin: 1.5rem 0 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    fieldset { border: none; padding: 0; display: flex; flex-direction: column; gap: 1rem; }
+
+    legend {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    input, select {
+      width: 100%;
+      background: var(--soft);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      color: var(--text);
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(155,109,255,0.12);
+      background: #fff;
+    }
+
+    button[type="submit"] {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 100px;
+      padding: 0.7rem 1.5rem;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      align-self: flex-start;
+      margin-top: 0.25rem;
+    }
+
+    button[type="submit"]:hover { opacity: 0.85; }
+
+    details {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    summary {
+      padding: 0.9rem 1.2rem;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      background: var(--soft);
+      color: var(--accent);
+      list-style: none;
+      transition: background 0.2s;
+      user-select: none;
+    }
+
+    summary:hover { background: #ebe0ff; }
+    summary::marker { display: none; }
+    details[open] summary { border-bottom: 1px solid var(--border); }
+    details form { padding: 1.5rem; }
+
+    #search-input { margin-bottom: 1rem; max-width: 360px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+    thead { background: var(--soft); border-bottom: 1px solid var(--border); }
+
+    th {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      font-weight: 700;
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.2s;
+    }
+
+    th:hover { color: var(--accent); }
+
+    td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
+
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(155,109,255,0.04); }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.7rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .badge-admin { background: var(--soft); color: var(--accent); }
+    .badge-student { background: #f0edf7; color: var(--muted); }
+
+    .edit-btn, .delete-btn {
+      padding: 0.3rem 0.9rem;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      font-family: 'Nunito', sans-serif;
+      transition: opacity 0.2s;
+      margin-right: 0.4rem;
+    }
+
+    .edit-btn { background: var(--soft); color: var(--accent); }
+    .delete-btn { background: rgba(224,92,122,0.1); color: var(--error); }
+    .edit-btn:hover, .delete-btn:hover { opacity: 0.75; }
+
+    @media (max-width: 600px) {
+      main { padding: 1.5rem 1rem; }
+      header { padding: 1rem 1.5rem; }
+      table { font-size: 0.8rem; }
+      th, td { padding: 0.6rem 0.5rem; }
+    }
+  </style>
+  <script src="manage_users.js" defer></script>
 </head>
 <body>
 
-    <!-- TODO: Create a 'header' element for the top of the page. -->
-        <!-- TODO: Inside the header, add a main heading (e.g., 'h1') with the text "Admin Portal". -->
-    <!-- End of the header. -->
+  <header>
+    <h1>Admin Portal</h1>
+    <a href="../../index.html">Back to Home</a>
+  </header>
 
-    <!-- TODO: Create a 'main' element to hold the primary content of the portal. -->
+  <main>
 
-        <!-- Section 1: Password Management -->
-        <!-- TODO: Create a 'section' for the password management functionality. -->
-            <!-- TODO: Add a sub-heading (e.g., 'h2') with the text "Change Your Password". -->
+    <section>
+      <h2>Change Your Password</h2>
+      <form action="#" id="password-form">
+        <fieldset>
+          <legend>Password Update</legend>
 
-            <!-- TODO: Create a 'form' for changing the password.
-                 - action="#"
-                 - id="password-form" -->
-                <!-- TODO: Use a 'fieldset' to group the password-related fields. -->
-                    <!-- TODO: Add a 'legend' for the fieldset, e.g., "Password Update". -->
+          <div>
+            <label for="current-password">Current Password</label>
+            <input type="password" id="current-password" placeholder="Enter current password" required>
+          </div>
 
-                    <!-- TODO: Add a 'label' for the current password input. 'for' should be "current-password". -->
-                    <!-- TODO: Add an 'input' for the current password.
-                         - type="password"
-                         - id="current-password"
-                         - required -->
+          <div>
+            <label for="new-password">New Password</label>
+            <input type="password" id="new-password" placeholder="At least 8 characters" minlength="8" required>
+          </div>
 
-                    <!-- TODO: Add a 'label' for the new password input. 'for' should be "new-password". -->
-                    <!-- TODO: Add an 'input' for the new password.
-                         - type="password"
-                         - id="new-password"
-                         - minlength="8"
-                         - required -->
+          <div>
+            <label for="confirm-password">Confirm New Password</label>
+            <input type="password" id="confirm-password" placeholder="Repeat new password" required>
+          </div>
 
-                    <!-- TODO: Add a 'label' for the confirm password input. 'for' should be "confirm-password". -->
-                    <!-- TODO: Add an 'input' to confirm the new password.
-                         - type="password"
-                         - id="confirm-password"
-                         - required -->
+          <button type="submit" id="change">Update Password</button>
+        </fieldset>
+      </form>
+    </section>
 
-                    <!-- TODO: Add a 'button' to submit the form.
-                         - type="submit"
-                         - id="change"
-                         - Text: "Update Password" -->
+    <section>
+      <h2>Manage Users</h2>
 
-                <!-- End of the fieldset. -->
-            <!-- End of the password form. -->
-        <!-- End of the password management section. -->
+      <details>
+        <summary>Add New User</summary>
+        <form action="#" id="add-user-form">
+          <fieldset>
+            <legend>New User Information</legend>
 
+            <div>
+              <label for="user-name">Full Name</label>
+              <input type="text" id="user-name" placeholder="e.g. Ali Hassan" required>
+            </div>
 
-        <!-- Section 2: User Management -->
-        <!-- TODO: Create another 'section' for the user management functionality. -->
-            <!-- TODO: Add a sub-heading (e.g., 'h2') with the text "Manage Users". -->
+            <div>
+              <label for="user-email">Email Address</label>
+              <input type="email" id="user-email" placeholder="e.g. 202101234@stu.uob.edu.bh" required>
+            </div>
 
-            <!-- Subsection 2.1: Add New User Form -->
-            <!-- TODO: Create a 'details' element so the "Add User" form can be collapsed. -->
-                <!-- TODO: Add a 'summary' element inside 'details' with the text "Add New User". -->
+            <div>
+              <label for="default-password">Default Password</label>
+              <input type="password" id="default-password" placeholder="At least 8 characters" minlength="8" required>
+            </div>
 
-                <!-- TODO: Create a 'form' for adding a new user.
-                     - action="#"
-                     - id="add-user-form" -->
-                    <!-- TODO: Use a 'fieldset' to group the new user fields. -->
-                        <!-- TODO: Add a 'legend' for the fieldset, e.g., "New User Information". -->
+            <div>
+              <label for="is-admin">Role</label>
+              <select id="is-admin">
+                <option value="0">Student</option>
+                <option value="1">Admin</option>
+              </select>
+            </div>
 
-                        <!-- TODO: Add a 'label' and 'input' for the user's full name.
-                             - label 'for': "user-name"
-                             - input 'id': "user-name"
-                             - input 'type': "text"
-                             - input: required -->
+            <button type="submit" id="add">Add User</button>
+          </fieldset>
+        </form>
+      </details>
 
-                        <!-- TODO: Add a 'label' and 'input' for the user's email.
-                             - label 'for': "user-email"
-                             - input 'id': "user-email"
-                             - input 'type': "email"
-                             - input: required -->
+      <h3>Registered Users</h3>
 
-                        <!-- TODO: Add a 'label' and 'input' for the default password.
-                             - label 'for': "default-password"
-                             - input 'id': "default-password"
-                             - input 'type': "password"
-                             - input: required
-                             - minlength="8" -->
+      <input type="text" id="search-input" placeholder="Search by name or email...">
 
-                        <!-- TODO: Add a 'label' and 'select' for the admin status.
-                             - label 'for': "is-admin"
-                             - select 'id': "is-admin"
-                             - Add two 'option' elements:
-                               - value="0" text "Student"
-                               - value="1" text "Admin" -->
+      <table id="user-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Admin</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="user-table-body"></tbody>
+      </table>
 
-                        <!-- TODO: Add a 'button' to submit the form.
-                             - type="submit"
-                             - id="add"
-                             - Text: "Add User" -->
+    </section>
 
-                    <!-- End of the fieldset. -->
-                <!-- End of the add user form. -->
-            <!-- End of the 'details' element. -->
-
-
-            <!-- Subsection 2.2: User List -->
-            <!-- TODO: Add a sub-heading (e.g., 'h3') for the list of users, e.g., "Registered Users". -->
-
-            <!-- TODO: Add a search input field.
-                 - type="text"
-                 - id="search-input"
-                 - placeholder e.g. "Search by name or email..." -->
-
-            <!-- TODO: Create a 'table' to display the list of users.
-                 - id="user-table" -->
-                <!-- TODO: Create a 'thead' for the table headers. -->
-                    <!-- TODO: Create a 'tr' (table row) inside the 'thead'. -->
-                        <!-- TODO: Create 'th' (table header) cells for:
-                             "Name", "Email", "Admin", "Actions"
-                             Each 'th' should be clickable for sorting. -->
-                    <!-- End of the row. -->
-                <!-- End of 'thead'. -->
-
-                <!-- TODO: Create a 'tbody' for the table body.
-                     - id="user-table-body"
-                     The rows will be populated dynamically by manage_users.js.
-                     Do NOT add any hardcoded rows here. -->
-            <!-- End of the table. -->
-
-        <!-- End of the user management section. -->
-
-    <!-- End of the main content area. -->
+  </main>
 
 </body>
 </html>
