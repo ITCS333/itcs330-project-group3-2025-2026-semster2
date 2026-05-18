@@ -286,4 +286,6 @@ async function loadAndInitialize() {
 }
 
 // --- Initial Page Load ---
+if (typeof fetch !== "undefined") {
 loadAndInitialize();
+}
