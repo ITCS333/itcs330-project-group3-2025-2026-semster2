@@ -74,31 +74,38 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 // TODO: Handle preflight OPTIONS request.
 // If the request method is OPTIONS, return HTTP 200 and exit.
-
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS'){
+    http_response_code(200);
+    exit;
+}
 
 // TODO: Include the shared database connection file.
 // require_once __DIR__ . '/../../common/db.php';
-
+require_once __DIR__ . '/../../common/db.php';
 
 // TODO: Get the PDO database connection.
 // $db = getDBConnection();
-
+$db = getDBConnection();
 
 // TODO: Read the HTTP request method.
 // $method = $_SERVER['REQUEST_METHOD'];
-
+$method = $_SERVER['REQUEST_METHOD'];
 
 // TODO: Read and decode the request body for POST and PUT requests.
 // $rawData = file_get_contents('php://input');
 // $data    = json_decode($rawData, true) ?? [];
-
+$rawData = file_get_contents('php://input');
+$data = json_decode($rawData, true) ?? [];
 
 // TODO: Read query parameters.
 // $action       = $_GET['action']        ?? null;  // 'comments', 'comment', 'delete_comment'
 // $id           = $_GET['id']            ?? null;  // integer assignment id
 // $assignmentId = $_GET['assignment_id'] ?? null;  // integer assignment id for comments queries
 // $commentId    = $_GET['comment_id']    ?? null;  // integer comment id
-
+$action = $_GET['action'] ?? null;
+$id = $_GET['id'] ?? null;
+$assignmentId = $_GET['assignment_id'] ?? null;
+$commentId = $_GET['comment_id'] ?? null; 
 
 // ============================================================================
 // ASSIGNMENT FUNCTIONS
@@ -121,22 +128,37 @@ function getAllAssignments(PDO $db): void
     // TODO: Build the base SELECT query.
     // SELECT id, title, description, due_date, files, created_at, updated_at
     // FROM assignments
-
+    $query= "SELECT id, title, description, due_date, files, created_at, updated_at FROM assignments";
+    $params= [];
     // TODO: If $_GET['search'] is provided and non-empty, append:
     // WHERE title LIKE :search OR description LIKE :search
     // Bind '%' . $search . '%' to :search.
+    if (isset($_GET['search']) && trim($_GET['search']) !== ''){
+        $search= '%' . trim($_GET['search']) . '%';
+        $query= $query . " WHERE title LIKE :search OR description LIKE :search";
+        $params[':search']= $search;
+    }
 
     // TODO: Validate $_GET['sort'] against the whitelist
     // [title, due_date, created_at].
     // Default to 'due_date' if missing or invalid.
-
+    $allowedSort= ['title', 'due_date', 'created_at'];
+    $sort= $_GET['sort'] ?? 'due_date';
+    if (!in_array($sort, $allowedSort)){
+        $sort= 'due_date';
+    }
     // TODO: Validate $_GET['order'] against [asc, desc].
     // Default to 'asc' if missing or invalid.
-
+    $allowedOrder= ['asc', 'desc'];
+    $order= $_GET['order'] ?? 'asc';
+    $order=strtolower($order);
+    if (!in_array($order, $allowedOrder)){
+        $order= 'asc';
+    }
     // TODO: Append ORDER BY {sort} {order} to the query.
-
+    $query= $query. " ORDER BY " . $sort. " ". $order;
     // TODO: Prepare, bind (if searching), and execute the statement.
-
+    
     // TODO: Fetch all rows as an associative array.
 
     // TODO: For each row, decode the files column:
