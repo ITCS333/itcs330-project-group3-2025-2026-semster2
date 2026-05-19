@@ -99,6 +99,4 @@ async function loadAssignments() {
 }
 
 // --- Initial Page Load ---
-if (typeof fetch !== "undefined") {
 loadAssignments();
-}
