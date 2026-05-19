@@ -248,6 +248,5 @@ async function initializePage() {
 }
 
 // --- Initial Page Load ---
-if (typeof fetch !== "undefined") {
 initializePage();
-}
+
