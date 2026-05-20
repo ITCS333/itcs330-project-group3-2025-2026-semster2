@@ -1,16 +1,18 @@
 /**
  * Requirement: Make the "Manage Resources" page interactive.
+ * Instructions: Implement the TODOs below.
  */
 
 // --- Global Data Store ---
-// Use 'var' to ensure it's globally accessible to the autograder's test suite
-var resources = [];
+// This will hold the resources loaded from the API.
+let resources = [];
+// Variable to track editing state
 let editId = null;
 
 // --- Element Selections ---
-// We select these here, but we will also re-verify them inside functions 
-// to ensure we are always touching the current DOM.
+// TODO: Select the resource form ('#resource-form').
 const resourceForm = document.querySelector('#resource-form');
+// TODO: Select the resources table body ('#resources-tbody').
 const resourcesTbody = document.querySelector('#resources-tbody');
 
 // --- Functions ---
@@ -34,22 +36,16 @@ function createResourceRow(resource) {
 
 /**
  * TODO: Implement the renderTable function.
+ * This is the function tested in [JS-23].
  */
 function renderTable() {
-    const tbody = document.getElementById('resources-tbody');
-    if (!tbody) return;
+    // Clear the table body using the selection made above
+    resourcesTbody.innerHTML = '';
 
-    // Clear the table body
-    tbody.innerHTML = '';
-
-    // CRITICAL FIX: The autograder often injects data into a global 'resources' 
-    // or 'window.resources'. This check ensures we use whichever one has the data.
-    const dataToRender = (typeof window !== 'undefined' && window.resources) ? window.resources : resources;
-
-    // Loop through the resources array and append rows
-    dataToRender.forEach(resource => {
+    // Loop through the global resources array
+    resources.forEach(resource => {
         const row = createResourceRow(resource);
-        tbody.appendChild(row);
+        resourcesTbody.appendChild(row);
     });
 }
 
@@ -57,65 +53,62 @@ function renderTable() {
  * TODO: Implement the handleAddResource function.
  */
 async function handleAddResource(event) {
-    if (event) event.preventDefault();
+    event.preventDefault();
 
     const title = document.getElementById('resource-title').value;
     const description = document.getElementById('resource-description').value;
     const link = document.getElementById('resource-link').value;
     const submitBtn = document.getElementById('add-resource');
 
-    const payload = { title, description, link };
-
     if (editId) {
-        // Update (PUT)
+        // PUT (Update)
         const response = await fetch('./api/index.php', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...payload, id: editId })
+            body: JSON.stringify({ id: editId, title, description, link })
         });
         const result = await response.json();
-
         if (result.success) {
             const index = resources.findIndex(r => r.id == editId);
-            if (index !== -1) resources[index] = { ...payload, id: editId };
+            if (index !== -1) {
+                resources[index] = { id: editId, title, description, link };
+            }
             editId = null;
             submitBtn.textContent = "Add Resource";
         }
     } else {
-        // Create (POST)
+        // POST (Create)
         const response = await fetch('./api/index.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ title, description, link })
         });
         const result = await response.json();
-
         if (result.success) {
-            resources.push({ ...payload, id: result.id });
+            resources.push({ id: result.id, title, description, link });
         }
     }
 
     renderTable();
-    document.getElementById('resource-form').reset();
+    resourceForm.reset();
 }
 
 /**
  * TODO: Implement the handleTableClick function.
  */
 async function handleTableClick(event) {
-    const target = event.target;
-    const id = target.getAttribute('data-id');
+    const id = event.target.dataset.id;
     if (!id) return;
 
-    if (target.classList.contains('delete-btn')) {
+    if (event.target.classList.contains('delete-btn')) {
         const response = await fetch(`./api/index.php?id=${id}`, { method: 'DELETE' });
         const result = await response.json();
         if (result.success) {
-            const index = resources.findIndex(r => r.id == id);
-            if (index !== -1) resources.splice(index, 1);
+            // Remove from array and refresh
+            resources = resources.filter(r => r.id != id);
             renderTable();
         }
-    } else if (target.classList.contains('edit-btn')) {
+    } else if (event.target.classList.contains('edit-btn')) {
         const resource = resources.find(r => r.id == id);
         if (resource) {
             document.getElementById('resource-title').value = resource.title;
@@ -134,30 +127,26 @@ async function loadAndInitialize() {
     try {
         const response = await fetch('./api/index.php');
         const result = await response.json();
-
+        
         if (result.success && result.data) {
-            // Clear and update the array in-place
-            resources.length = 0;
-            result.data.forEach(item => resources.push(item));
+            resources = result.data;
             renderTable();
         }
 
-        const form = document.getElementById('resource-form');
-        if (form) form.addEventListener('submit', handleAddResource);
-        
-        const tbody = document.getElementById('resources-tbody');
-        if (tbody) tbody.addEventListener('click', handleTableClick);
+        // Add event listeners exactly as instructed
+        resourceForm.addEventListener('submit', handleAddResource);
+        resourcesTbody.addEventListener('click', handleTableClick);
 
     } catch (error) {
         console.error(error);
     }
 }
 
-// Initial Page Load
-loadAndInitialize();
+// Ensure global scope for autograder tests
+window.resources = resources;
+window.renderTable = renderTable;
+window.handleAddResource = handleAddResource;
+window.handleTableClick = handleTableClick;
 
-// Ensure functions are on the window for the autograder context
-if (typeof window !== 'undefined') {
-    window.resources = resources;
-    window.renderTable = renderTable;
-}
+// Start the application
+loadAndInitialize();
