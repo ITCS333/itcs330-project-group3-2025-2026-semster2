@@ -1,15 +1,22 @@
 let currentResourceId = null;
 let currentComments = [];
 
+const titleElement = document.getElementById('resource-title');
+const descriptionElement = document.getElementById('resource-description');
+const linkElement = document.getElementById('resource-link');
+const commentListContainer = document.getElementById('comment-list');
+const commentForm = document.getElementById('comment-form');
+const commentInput = document.getElementById('new-comment');
+
 function getResourceIdFromURL() {
   const params = new URLSearchParams(window.location.search);
   return params.get('id');
 }
 
 function renderResourceDetails(resource) {
-  document.getElementById('resource-title').textContent = resource.title;
-  document.getElementById('resource-description').textContent = resource.description;
-  document.getElementById('resource-link').href = resource.link;
+  titleElement.textContent = resource.title;
+  descriptionElement.textContent = resource.description;
+  linkElement.href = resource.link;
 }
 
 function createCommentArticle(comment) {
@@ -24,18 +31,15 @@ function createCommentArticle(comment) {
 }
 
 function renderComments() {
-  const container = document.getElementById('comment-list');
-  if (!container) return;
-  container.innerHTML = '';
+  commentListContainer.innerHTML = '';
   currentComments.forEach(comment => {
-    container.appendChild(createCommentArticle(comment));
+    commentListContainer.appendChild(createCommentArticle(comment));
   });
 }
 
 async function handleAddComment(event) {
   event.preventDefault();
-  const textarea = document.getElementById('new-comment');
-  const commentText = textarea.value.trim();
+  const commentText = commentInput.value.trim();
   if (!commentText) return;
 
   const response = await fetch('./api/index.php?action=comment', {
@@ -51,32 +55,27 @@ async function handleAddComment(event) {
   if (result.success) {
     currentComments.push({ author: 'Student', text: commentText });
     renderComments();
-    textarea.value = '';
+    commentInput.value = '';
   }
 }
 
 async function initializePage() {
   currentResourceId = getResourceIdFromURL();
-  const titleElem = document.getElementById('resource-title');
-  if (!currentResourceId) { if(titleElem) titleElem.textContent = "Resource not found."; return; }
+  if (!currentResourceId) { titleElement.textContent = "Resource not found."; return; }
 
-  try {
-    const [resRes, comRes] = await Promise.all([
-      fetch(`./api/index.php?id=${currentResourceId}`).then(r => r.json()),
-      fetch(`./api/index.php?resource_id=${currentResourceId}&action=comments`).then(r => r.json())
-    ]);
+  const [resRes, comRes] = await Promise.all([
+    fetch(`./api/index.php?id=${currentResourceId}`).then(r => r.json()),
+    fetch(`./api/index.php?resource_id=${currentResourceId}&action=comments`).then(r => r.json())
+  ]);
 
-    if (resRes.success) {
-      renderResourceDetails(resRes.data);
-      currentComments = comRes.data || [];
-      renderComments();
-      document.getElementById('comment-form').addEventListener('submit', handleAddComment);
-    } else {
-      if(titleElem) titleElem.textContent = "Resource not found.";
-    }
-  } catch (error) { console.error(error); }
+  if (resRes.success) {
+    renderResourceDetails(resRes.data);
+    currentComments = comRes.data || [];
+    renderComments();
+    commentForm.addEventListener('submit', handleAddComment);
+  } else {
+    titleElement.textContent = "Resource not found.";
+  }
 }
 
-if (document.getElementById('resource-title')) {
-  initializePage();
-}
+initializePage();

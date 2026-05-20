@@ -1,5 +1,4 @@
 <?php
-// Set headers for JSON response
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
@@ -7,7 +6,6 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 
-// Include the database connection file using the instructor's function
 require_once '../../common/db.php';
 $db = getDBConnection();
 
@@ -15,16 +13,14 @@ $method = $_SERVER['REQUEST_METHOD'];
 $rawData = file_get_contents('php://input');
 $data = json_decode($rawData, true);
 
-// Parse query parameters
 $action = $_GET['action'] ?? null;
 $id = $_GET['id'] ?? null;
 $resource_id = $_GET['resource_id'] ?? null;
 $comment_id = $_GET['comment_id'] ?? null;
 
-// ROUTING LOGIC
 try {
     if ($method === 'GET') {
-        if ($action === 'comments' && $resource_id) {
+        if ($action === 'comments') {
             getCommentsByResourceId($db, $resource_id);
         } elseif ($id) {
             getResourceById($db, $id);
@@ -40,31 +36,25 @@ try {
     } elseif ($method === 'PUT') {
         updateResource($db, $data);
     } elseif ($method === 'DELETE') {
-        if ($action === 'delete_comment' && $comment_id) {
+        if ($action === 'delete_comment') {
             deleteComment($db, $comment_id);
         } else {
             deleteResource($db, $id);
         }
-    } else {
-        sendResponse(['success' => false, 'message' => 'Method Not Allowed'], 405);
     }
 } catch (Exception $e) {
     sendResponse(['success' => false, 'message' => $e->getMessage()], 500);
 }
 
-// ============================================================================
-// RESOURCE FUNCTIONS
-// ============================================================================
-
 function getAllResources($db) {
     $search = $_GET['search'] ?? null;
     $sql = "SELECT id, title, description, link, created_at FROM resources";
     if ($search) {
-        $sql .= " WHERE title LIKE :search OR description LIKE :search";
+        $sql .= " WHERE title LIKE :s OR description LIKE :s";
     }
     $sql .= " ORDER BY created_at DESC";
     $stmt = $db->prepare($sql);
-    if ($search) { $stmt->bindValue(':search', "%$search%"); }
+    if ($search) { $stmt->bindValue(':s', "%$search%"); }
     $stmt->execute();
     sendResponse(['success' => true, 'data' => $stmt->fetchAll()]);
 }
@@ -80,7 +70,7 @@ function getResourceById($db, $resourceId) {
 function createResource($db, $data) {
     $stmt = $db->prepare("INSERT INTO resources (title, description, link) VALUES (?, ?, ?)");
     $stmt->execute([$data['title'], $data['description'] ?? '', $data['link']]);
-    sendResponse(['success' => true, 'message' => 'Created', 'id' => $db->lastInsertId()], 201);
+    sendResponse(['success' => true, 'message' => 'Resource created', 'id' => $db->lastInsertId()], 201);
 }
 
 function updateResource($db, $data) {
@@ -94,10 +84,6 @@ function deleteResource($db, $resourceId) {
     $stmt->execute([$resourceId]);
     sendResponse(['success' => true, 'message' => 'Resource deleted successfully.']);
 }
-
-// ============================================================================
-// COMMENT FUNCTIONS
-// ============================================================================
 
 function getCommentsByResourceId($db, $resourceId) {
     $stmt = $db->prepare("SELECT id, resource_id, author, text, created_at FROM comments_resource WHERE resource_id = ? ORDER BY created_at ASC");
@@ -122,3 +108,6 @@ function sendResponse($data, $statusCode = 200) {
     echo json_encode($data);
     exit;
 }
+
+function validateUrl($url) { return filter_var($url, FILTER_VALIDATE_URL); }
+function sanitizeInput($data) { return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8'); }
