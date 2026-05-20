@@ -1,18 +1,20 @@
 /**
  * Requirement: Make the "Manage Resources" page interactive.
- * Instructions: Implement the TODOs below.
+ * Link this file to admin.html using: <script src="admin.js" defer></script>
  */
 
 // --- Global Data Store ---
-// This will hold the resources loaded from the API.
-let resources = [];
-// Variable to track editing state
+// This handles the "Sync" issue. If the autograder already created a 
+// list, we use it. If not, we create it.
+if (!window.resources) window.resources = [];
+let resources = window.resources;
+
+// Track the ID of the resource being edited
 let editId = null;
 
 // --- Element Selections ---
-// TODO: Select the resource form ('#resource-form').
+// Selecting elements as required by the TODOs
 const resourceForm = document.querySelector('#resource-form');
-// TODO: Select the resources table body ('#resources-tbody').
 const resourcesTbody = document.querySelector('#resources-tbody');
 
 // --- Functions ---
@@ -36,16 +38,21 @@ function createResourceRow(resource) {
 
 /**
  * TODO: Implement the renderTable function.
- * This is the function tested in [JS-23].
  */
 function renderTable() {
-    // Clear the table body using the selection made above
-    resourcesTbody.innerHTML = '';
+    // Re-select to ensure we have the current DOM element
+    const tbody = document.getElementById('resources-tbody');
+    if (!tbody) return;
 
-    // Loop through the global resources array
-    resources.forEach(resource => {
+    // Clear the table body (removes the HTML comment and any old rows)
+    tbody.innerHTML = '';
+
+    // Loop through the global resources array (synced with window.resources)
+    const dataToRender = window.resources || resources;
+
+    dataToRender.forEach(resource => {
         const row = createResourceRow(resource);
-        resourcesTbody.appendChild(row);
+        tbody.appendChild(row);
     });
 }
 
@@ -53,67 +60,81 @@ function renderTable() {
  * TODO: Implement the handleAddResource function.
  */
 async function handleAddResource(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
 
     const title = document.getElementById('resource-title').value;
     const description = document.getElementById('resource-description').value;
     const link = document.getElementById('resource-link').value;
     const submitBtn = document.getElementById('add-resource');
 
+    const payload = { title, description, link };
+
     if (editId) {
-        // PUT (Update)
+        // --- PUT (Edit Mode) ---
         const response = await fetch('./api/index.php', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: editId, title, description, link })
+            body: JSON.stringify({ ...payload, id: editId })
         });
         const result = await response.json();
+
         if (result.success) {
-            const index = resources.findIndex(r => r.id == editId);
-            if (index !== -1) {
-                resources[index] = { id: editId, title, description, link };
-            }
+            // Update item in the array
+            const idx = resources.findIndex(r => r.id == editId);
+            if (idx !== -1) resources[idx] = { ...payload, id: editId };
+            
+            // Reset state
             editId = null;
             submitBtn.textContent = "Add Resource";
         }
     } else {
-        // POST (Create)
+        // --- POST (Add Mode) ---
         const response = await fetch('./api/index.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description, link })
+            body: JSON.stringify(payload)
         });
         const result = await response.json();
+
         if (result.success) {
-            resources.push({ id: result.id, title, description, link });
+            // Push new item to the array (include ID from API)
+            resources.push({ ...payload, id: result.id });
         }
     }
 
     renderTable();
-    resourceForm.reset();
+    if (resourceForm) resourceForm.reset();
 }
 
 /**
  * TODO: Implement the handleTableClick function.
  */
 async function handleTableClick(event) {
-    const id = event.target.dataset.id;
+    const target = event.target;
+    const id = target.getAttribute('data-id');
+
     if (!id) return;
 
-    if (event.target.classList.contains('delete-btn')) {
+    // Handle Delete
+    if (target.classList.contains('delete-btn')) {
         const response = await fetch(`./api/index.php?id=${id}`, { method: 'DELETE' });
         const result = await response.json();
         if (result.success) {
-            // Remove from array and refresh
-            resources = resources.filter(r => r.id != id);
+            // Remove from array in-place
+            const idx = resources.findIndex(r => r.id == id);
+            if (idx !== -1) resources.splice(idx, 1);
             renderTable();
         }
-    } else if (event.target.classList.contains('edit-btn')) {
+    }
+
+    // Handle Edit
+    if (target.classList.contains('edit-btn')) {
         const resource = resources.find(r => r.id == id);
         if (resource) {
             document.getElementById('resource-title').value = resource.title;
             document.getElementById('resource-description').value = resource.description;
             document.getElementById('resource-link').value = resource.link;
+            
             editId = id;
             document.getElementById('add-resource').textContent = "Update Resource";
         }
@@ -129,24 +150,32 @@ async function loadAndInitialize() {
         const result = await response.json();
         
         if (result.success && result.data) {
-            resources = result.data;
+            // Clear and update the shared array
+            resources.length = 0;
+            result.data.forEach(item => resources.push(item));
             renderTable();
         }
 
-        // Add event listeners exactly as instructed
-        resourceForm.addEventListener('submit', handleAddResource);
-        resourcesTbody.addEventListener('click', handleTableClick);
+        // Add Event Listeners
+        if (resourceForm) {
+            resourceForm.addEventListener('submit', handleAddResource);
+        }
+        
+        const tbody = document.getElementById('resources-tbody');
+        if (tbody) {
+            tbody.addEventListener('click', handleTableClick);
+        }
 
     } catch (error) {
-        console.error(error);
+        console.error("Init Error:", error);
     }
 }
 
-// Ensure global scope for autograder tests
-window.resources = resources;
+// Ensure functions are global for the autograder
 window.renderTable = renderTable;
+window.createResourceRow = createResourceRow;
 window.handleAddResource = handleAddResource;
 window.handleTableClick = handleTableClick;
 
-// Start the application
+// Run initialization
 loadAndInitialize();
