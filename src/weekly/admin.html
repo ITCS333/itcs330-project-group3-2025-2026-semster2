@@ -1,123 +1,361 @@
-<!--
-  Requirement: Create the Admin View for the Weekly Breakdown
-
-  Instructions:
-  Fill in the HTML elements as described in the comments.
-  This page allows the teacher (admin) to perform full CRUD operations
-  on the weekly course content.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- TODO: Add the <meta> tag for character encoding (UTF-8). -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Weekly Breakdown</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
-    <!-- TODO: Add the responsive viewport <meta> tag
-         (width=device-width, initial-scale=1.0). -->
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <!-- TODO: Add a <title>, e.g., "Manage Weekly Breakdown". -->
+        :root {
+            --bg: #ffffff;
+            --surface: #f4f4f8;
+            --surface2: #eaeaf0;
+            --border: #d1d5e0;
+            --accent: #8b5cf6;
+            --danger: #ff6b6b;
+            --success: #4ecb8d;
+            --text: #1a1d2e;
+            --muted: #6b7280;
+        }
 
-    <!-- TODO: Link to your CSS framework or stylesheet. -->
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #f9f9fb;
+            color: var(--text);
+            min-height: 100vh;
+        }
 
-    <!-- Required: link admin.js with defer. -->
+        header {
+            padding: 2.5rem 2rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -80px; right: -40px;
+            width: 300px; height: 200px;
+            background: radial-gradient(ellipse, rgba(139,92,246,0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        header a.back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            transition: color 0.2s;
+        }
+        header a.back:hover { color: var(--accent); }
+
+        header h1 { color: #000000;
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            font-weight: 800;
+            color: #fff;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        /* ── Form Section ── */
+        section.form-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 2rem;
+            animation: fadeUp 0.35s ease both;
+        }
+
+        section.form-section h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--accent);
+            padding-left: 0.75rem;
+        }
+
+        #week-form fieldset {
+            border: none;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.1rem;
+        }
+
+        #week-form legend {
+            grid-column: 1 / -1;
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 0.25rem;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .field.full { grid-column: 1 / -1; }
+
+        .field label {
+            font-size: 0.83rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .field input,
+        .field textarea {
+            background: #f9f9fb;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.65rem 0.9rem;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.92rem;
+            outline: none;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+
+        .field input:focus,
+        .field textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .field textarea { resize: vertical; }
+
+        #week-form .btn-row {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        #add-week {
+            padding: 0.6rem 1.5rem;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+        #add-week:hover { opacity: 0.88; transform: translateY(-1px); }
+
+        #cancel-edit {
+            display: none;
+            padding: 0.6rem 1.2rem;
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        #cancel-edit:hover { color: var(--text); border-color: var(--muted); }
+
+        /* ── Table Section ── */
+        section.table-section {
+            animation: fadeUp 0.4s 0.1s ease both;
+        }
+
+        section.table-section h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1.25rem;
+            border-left: 3px solid var(--success);
+            padding-left: 0.75rem;
+        }
+
+        #weeks-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        #weeks-table thead tr {
+            background: var(--surface2);
+        }
+
+        #weeks-table th {
+            padding: 0.85rem 1rem;
+            text-align: left;
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        #weeks-table td {
+            padding: 0.9rem 1rem;
+            font-size: 0.9rem;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        #weeks-table tbody tr:last-child td { border-bottom: none; }
+
+        #weeks-table tbody tr:hover { background: var(--surface2); }
+
+        /* Description cell: truncate long text */
+        #weeks-table td.desc-cell {
+            max-width: 280px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        /* Action buttons */
+        .edit-btn, .delete-btn {
+            padding: 0.35rem 0.85rem;
+            border: none;
+            border-radius: 5px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .edit-btn {
+            background: rgba(139,92,246,0.08);
+            color: var(--accent);
+            margin-right: 0.4rem;
+        }
+
+        .delete-btn {
+            background: rgba(255,107,107,0.12);
+            color: var(--danger);
+        }
+
+        .edit-btn:hover, .delete-btn:hover { opacity: 0.75; }
+
+        .empty-row td {
+            text-align: center;
+            background: linear-gradient(135deg, #7c3aed, #c4b5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-style: italic;
+            padding: 2rem;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            #week-form fieldset { grid-template-columns: 1fr; }
+            .field.full { grid-column: 1; }
+            #week-form .btn-row { grid-column: 1; }
+        }
+    </style>
     <script src="admin.js" defer></script>
 </head>
 <body>
 
-    <!-- TODO: Create a <header> containing an <h1>
-         "Manage Weekly Breakdown". -->
+    <header>
+        <a class="back" href="list.html">← Back to weekly list</a>
+        <h1>Manage Weekly Breakdown</h1>
+    </header>
 
-    <!-- TODO: Create the <main> content area. -->
+    <main>
 
-        <!-- ============================================================
-             Section 1: Add / Edit Week Form
-             ============================================================ -->
-        <!-- TODO: Create a <section> for the form. -->
+        <!-- Section 1: Add / Edit Form -->
+        <section class="form-section">
+            <h2>Add a New Week</h2>
 
-            <!-- TODO: Add a sub-heading <h2> "Add a New Week". -->
+            <form id="week-form" action="#">
+                <fieldset>
+                    <legend>Weekly Details</legend>
 
-            <!-- TODO: Create a <form id="week-form"> (action can be "#").
-                 The id is required by admin.js. -->
+                    <div class="field">
+                        <label for="week-title">Week Title</label>
+                        <input id="week-title" type="text" required
+                               placeholder="Week 1: Introduction to HTML">
+                    </div>
 
-                <!-- TODO: Use a <fieldset> to group the form controls. -->
-                    <!-- TODO: Add a <legend>, e.g., "Weekly Details". -->
+                    <div class="field">
+                        <label for="week-start-date">Start Date</label>
+                        <input id="week-start-date" type="date" required>
+                    </div>
 
-                    <!-- TODO: Add a <label> and <input> for the week title.
-                         - label for="week-title"
-                         - input id="week-title", type="text", required
-                         - Placeholder: "Week 1: Introduction to HTML" -->
+                    <div class="field full">
+                        <label for="week-description">Description</label>
+                        <textarea id="week-description" rows="5"
+                                  placeholder="What will students learn this week?"></textarea>
+                    </div>
 
-                    <!-- TODO: Add a <label> and <input> for the start date.
-                         - label for="week-start-date"
-                         - input id="week-start-date", type="date", required
-                         - Maps to the start_date column in the weeks table. -->
+                    <div class="field full">
+                        <label for="week-links">Resource Links (one URL per line)</label>
+                        <textarea id="week-links" rows="3"
+                                  placeholder="https://developer.mozilla.org/&#10;https://javascript.info/"></textarea>
+                    </div>
 
-                    <!-- TODO: Add a <label> and <textarea> for the week
-                         description.
-                         - label for="week-description"
-                         - textarea id="week-description", rows="5"
-                         - Maps to the description column in the weeks table. -->
+                    <div class="btn-row">
+                        <button id="add-week" type="submit">Add Week</button>
+                        <button id="cancel-edit" type="button">Cancel</button>
+                    </div>
+                </fieldset>
+            </form>
+        </section>
 
-                    <!-- TODO: Add a <label> and <textarea> for resource links
-                         (one URL per line).
-                         - label for="week-links"
-                         - textarea id="week-links", rows="3"
-                         - Maps to the links column (JSON array) in the
-                           weeks table. admin.js will split the textarea
-                           value on newlines and send it as an array. -->
+        <!-- Section 2: Existing Weeks Table -->
+        <section class="table-section">
+            <h2>Current Weekly Breakdown</h2>
 
-                    <!-- TODO: Add a submit <button>.
-                         - id="add-week", type="submit"
-                         - Text: "Add Week"
-                         - When the form is in edit mode, admin.js will
-                           change the button text to "Update Week" and
-                           store the id being edited in a data attribute. -->
-                <!-- End of <fieldset> -->
-            <!-- End of <form> -->
-        <!-- End of form <section> -->
+            <table id="weeks-table">
+                <thead>
+                    <tr>
+                        <th>Week Title</th>
+                        <th>Start Date</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="weeks-tbody">
+                    <!-- Rows injected by admin.js -->
+                </tbody>
+            </table>
+        </section>
 
+    </main>
 
-        <!-- ============================================================
-             Section 2: Existing Weekly Entries
-             ============================================================ -->
-        <!-- TODO: Create a <section> to display the current list of weeks. -->
-
-            <!-- TODO: Add a sub-heading <h2> "Current Weekly Breakdown". -->
-
-            <!-- TODO: Create a <table id="weeks-table">. -->
-
-                <!-- TODO: Create a <thead> with a <tr> containing <th>
-                     elements:
-                     - "Week Title"
-                     - "Start Date"
-                     - "Description"
-                     - "Actions"
-                     The columns must match the data rendered by
-                     admin.js createWeekRow(). -->
-
-                <!-- TODO: Create a <tbody id="weeks-tbody">.
-                     The id is required by admin.js so it can inject
-                     <tr> rows. admin.js will clear and repopulate this
-                     tbody whenever the data changes. -->
-
-                <!-- admin.js will inject rows here. Each row follows
-                     this structure (do NOT hardcode real data):
-
-                <tr>
-                    <td>Week 1: Introduction to HTML</td>
-                    <td>2025-01-13</td>
-                    <td>Learn HTML fundamentals...</td>
-                    <td>
-                        <button class="edit-btn"   data-id="1">Edit</button>
-                        <button class="delete-btn" data-id="1">Delete</button>
-                    </td>
-                </tr>
-
-                The data-id attribute holds the integer id from the
-                weeks table (primary key). -->
-
-            <!-- End of <table> -->
-        <!-- End of list <section> -->
-
-    <!-- End of <main> -->
 </body>
 </html>
