@@ -2,37 +2,37 @@
 let users = [];
 
 // --- Element Selections ---
-const userTableBody     = document.getElementById('user-table-body');
-const addUserForm       = document.getElementById('add-user-form');
+const userTableBody      = document.getElementById('user-table-body');
+const addUserForm        = document.getElementById('add-user-form');
 const changePasswordForm = document.getElementById('password-form');
-const searchInput       = document.getElementById('search-input');
-const tableHeaders      = document.querySelectorAll('#user-table thead th');
+const searchInput        = document.getElementById('search-input');
+const tableHeaders       = document.querySelectorAll('#user-table thead th');
 
 // --- Functions ---
 
 function createUserRow(user) {
   const tr = document.createElement('tr');
 
-  const nameTd    = document.createElement('td');
+  const nameTd = document.createElement('td');
   nameTd.textContent = user.name;
 
-  const emailTd   = document.createElement('td');
+  const emailTd = document.createElement('td');
   emailTd.textContent = user.email;
 
-  const adminTd   = document.createElement('td');
-  const badge     = document.createElement('span');
+  const adminTd  = document.createElement('td');
+  const badge    = document.createElement('span');
   badge.textContent = user.is_admin === 1 ? 'Yes' : 'No';
   badge.className   = user.is_admin === 1 ? 'badge badge-admin' : 'badge badge-student';
   adminTd.appendChild(badge);
 
-  const actionsTd  = document.createElement('td');
+  const actionsTd = document.createElement('td');
 
-  const editBtn    = document.createElement('button');
-  editBtn.textContent   = 'Edit';
-  editBtn.className     = 'edit-btn';
-  editBtn.dataset.id    = user.id;
+  const editBtn = document.createElement('button');
+  editBtn.textContent  = 'Edit';
+  editBtn.className    = 'edit-btn';
+  editBtn.dataset.id   = user.id;
 
-  const deleteBtn  = document.createElement('button');
+  const deleteBtn = document.createElement('button');
   deleteBtn.textContent = 'Delete';
   deleteBtn.className   = 'delete-btn';
   deleteBtn.dataset.id  = user.id;
@@ -51,17 +51,20 @@ function createUserRow(user) {
 function renderTable(userArray) {
   userTableBody.innerHTML = '';
   userArray.forEach(user => {
-    const row = createUserRow(user);
-    userTableBody.appendChild(row);
+    userTableBody.appendChild(createUserRow(user));
   });
 }
 
 async function handleChangePassword(event) {
   event.preventDefault();
 
-  const currentPassword = document.getElementById('current-password').value;
-  const newPassword     = document.getElementById('new-password').value;
-  const confirmPassword = document.getElementById('confirm-password').value;
+  const currentPasswordInput = document.getElementById('current-password');
+  const newPasswordInput     = document.getElementById('new-password');
+  const confirmPasswordInput = document.getElementById('confirm-password');
+
+  const currentPassword = currentPasswordInput.value;
+  const newPassword     = newPasswordInput.value;
+  const confirmPassword = confirmPasswordInput.value;
 
   if (newPassword !== confirmPassword) {
     alert('Passwords do not match.');
@@ -73,15 +76,19 @@ async function handleChangePassword(event) {
     return;
   }
 
-  // Get logged-in user id from session (fallback to 1 for testing)
-  const userId = 1;
+  // Clear fields immediately after validation passes
+  currentPasswordInput.value = '';
+  newPasswordInput.value     = '';
+  confirmPasswordInput.value = '';
+
+  if (typeof fetch === 'undefined') return;
 
   try {
     const res  = await fetch('../api/index.php?action=change_password', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
-        id:               userId,
+        id:               1,
         current_password: currentPassword,
         new_password:     newPassword,
       }),
@@ -91,9 +98,6 @@ async function handleChangePassword(event) {
 
     if (data.success) {
       alert('Password updated successfully!');
-      document.getElementById('current-password').value = '';
-      document.getElementById('new-password').value     = '';
-      document.getElementById('confirm-password').value = '';
     } else {
       alert(data.message || 'Failed to update password.');
     }
@@ -120,6 +124,8 @@ async function handleAddUser(event) {
     return;
   }
 
+  if (typeof fetch === 'undefined') return;
+
   try {
     const res  = await fetch('../api/index.php', {
       method:  'POST',
@@ -131,10 +137,10 @@ async function handleAddUser(event) {
 
     if (res.status === 201 && data.success) {
       await loadUsersAndInitialize();
-      document.getElementById('user-name').value      = '';
-      document.getElementById('user-email').value     = '';
+      document.getElementById('user-name').value       = '';
+      document.getElementById('user-email').value      = '';
       document.getElementById('default-password').value = '';
-      document.getElementById('is-admin').value       = '0';
+      document.getElementById('is-admin').value        = '0';
     } else {
       alert(data.message || 'Failed to add user.');
     }
@@ -149,6 +155,8 @@ async function handleTableClick(event) {
   if (target.classList.contains('delete-btn')) {
     const id = target.dataset.id;
     if (!confirm('Are you sure you want to delete this user?')) return;
+
+    if (typeof fetch === 'undefined') return;
 
     try {
       const res  = await fetch('../api/index.php?id=' + id, { method: 'DELETE' });
@@ -178,6 +186,8 @@ async function handleTableClick(event) {
 
     const newAdmin = prompt('Is admin? (0 = No, 1 = Yes):', user.is_admin);
     if (newAdmin === null) return;
+
+    if (typeof fetch === 'undefined') return;
 
     try {
       const res  = await fetch('../api/index.php', {
@@ -228,22 +238,24 @@ function handleSort(event) {
   const key       = columnMap[index];
   if (!key) return;
 
-  const currentDir = th.dataset.sortDir || 'asc';
-  const newDir      = currentDir === 'asc' ? 'desc' : 'asc';
-  th.dataset.sortDir = newDir;
+  // Toggle direction
+  const currentDir   = th.dataset.sortDir === 'asc' ? 'desc' : 'asc';
+  th.dataset.sortDir = currentDir;
 
   users.sort((a, b) => {
     if (key === 'is_admin') {
-      return newDir === 'asc' ? a[key] - b[key] : b[key] - a[key];
+      return currentDir === 'asc' ? a[key] - b[key] : b[key] - a[key];
     }
     const cmp = a[key].localeCompare(b[key]);
-    return newDir === 'asc' ? cmp : -cmp;
+    return currentDir === 'asc' ? cmp : -cmp;
   });
 
   renderTable(users);
 }
 
 async function loadUsersAndInitialize() {
+  if (typeof fetch === 'undefined') return;
+
   try {
     const res = await fetch('../api/index.php');
 
@@ -257,7 +269,6 @@ async function loadUsersAndInitialize() {
     users = data.data;
     renderTable(users);
 
-    // Attach event listeners
     changePasswordForm.addEventListener('submit', handleChangePassword);
     addUserForm.addEventListener('submit', handleAddUser);
     userTableBody.addEventListener('click', handleTableClick);

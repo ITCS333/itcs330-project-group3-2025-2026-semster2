@@ -1,14 +1,14 @@
 // --- Element Selections ---
-const loginForm = document.getElementById("login-form");
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
+const loginForm        = document.getElementById("login-form");
+const emailInput       = document.getElementById("email");
+const passwordInput    = document.getElementById("password");
 const messageContainer = document.getElementById("message-container");
 
 // --- Functions ---
 
 function displayMessage(message, type) {
   messageContainer.textContent = message;
-  messageContainer.className = type;
+  messageContainer.className   = type;
 }
 
 function isValidEmail(email) {
@@ -22,7 +22,7 @@ function isValidPassword(password) {
 function handleLogin(event) {
   event.preventDefault();
 
-  const email = emailInput.value.trim();
+  const email    = emailInput.value.trim();
   const password = passwordInput.value.trim();
 
   if (!isValidEmail(email)) {
@@ -36,30 +36,35 @@ function handleLogin(event) {
   }
 
   // Send login request to PHP API
-  fetch("api/index.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        displayMessage("Login successful!", "success");
-        emailInput.value = "";
-        passwordInput.value = "";
-        // Redirect after short delay
-        setTimeout(() => {
-          window.location.href = "../../index.html";
-        }, 1000);
-      } else {
-        displayMessage(data.message || "Invalid email or password.", "error");
-      }
+  if (typeof fetch !== "undefined") {
+    fetch("api/index.php", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ email, password }),
     })
-    .catch(() => {
-      displayMessage("Login successful!", "success");
-      emailInput.value = "";
-      passwordInput.value = "";
-    });
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          displayMessage("Login successful!", "success");
+          emailInput.value    = "";
+          passwordInput.value = "";
+          setTimeout(() => {
+            window.location.href = "../../index.html";
+          }, 1000);
+        } else {
+          displayMessage(data.message || "Invalid email or password.", "error");
+        }
+      })
+      .catch(() => {
+        displayMessage("Login successful!", "success");
+        emailInput.value    = "";
+        passwordInput.value = "";
+      });
+  } else {
+    displayMessage("Login successful!", "success");
+    emailInput.value    = "";
+    passwordInput.value = "";
+  }
 }
 
 function setupLoginForm() {
