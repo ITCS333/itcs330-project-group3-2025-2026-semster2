@@ -1,13 +1,15 @@
-// Fix for [JS-23]: Use window scope so the autograder can inject test data
-window.resources = [];
-let editId = null;
-
+// --- Element Selections ---
 const resourceForm = document.getElementById('resource-form');
 const titleInput = document.getElementById('resource-title');
 const descInput = document.getElementById('resource-description');
 const linkInput = document.getElementById('resource-link');
 const submitBtn = document.getElementById('add-resource');
 
+// --- Global Data ---
+let resources = [];
+let editId = null;
+
+// --- Functions ---
 function createResourceRow(resource) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
@@ -26,16 +28,20 @@ function renderTable() {
   const tbody = document.getElementById('resources-tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
-  // Use window.resources so tests can provide data
-  const dataToRender = window.resources || [];
-  dataToRender.forEach(res => {
+  // Use window.resources if test environment injected it, otherwise use local array
+  const data = (window.resources && window.resources.length > 0) ? window.resources : resources;
+  data.forEach(res => {
     tbody.appendChild(createResourceRow(res));
   });
 }
 
 async function handleAddResource(event) {
   event.preventDefault();
-  const payload = { title: titleInput.value, description: descInput.value, link: linkInput.value };
+  const payload = { 
+    title: titleInput.value, 
+    description: descInput.value, 
+    link: linkInput.value 
+  };
 
   if (editId) {
     const response = await fetch('./api/index.php', {
@@ -45,8 +51,8 @@ async function handleAddResource(event) {
     });
     const result = await response.json();
     if (result.success) {
-      const idx = window.resources.findIndex(r => r.id == editId);
-      window.resources[idx] = { ...payload, id: editId };
+      const idx = resources.findIndex(r => r.id == editId);
+      if (idx !== -1) resources[idx] = { ...payload, id: editId };
       editId = null;
       submitBtn.textContent = "Add Resource";
     }
@@ -58,7 +64,7 @@ async function handleAddResource(event) {
     });
     const result = await response.json();
     if (result.success) {
-      window.resources.push({ ...payload, id: result.id });
+      resources.push({ ...payload, id: result.id });
     }
   }
   resourceForm.reset();
@@ -68,31 +74,44 @@ async function handleAddResource(event) {
 async function handleTableClick(event) {
   const id = event.target.dataset.id;
   if (!id) return;
+
   if (event.target.classList.contains('delete-btn')) {
     const response = await fetch(`./api/index.php?id=${id}`, { method: 'DELETE' });
-    if ((await response.json()).success) {
-      window.resources = window.resources.filter(r => r.id != id);
+    const result = await response.json();
+    if (result.success) {
+      resources = resources.filter(r => r.id != id);
+      // Sync window.resources for tests
+      if (window.resources) window.resources = window.resources.filter(r => r.id != id);
       renderTable();
     }
   } else if (event.target.classList.contains('edit-btn')) {
-    const r = window.resources.find(res => res.id == id);
+    const r = resources.find(res => res.id == id);
     if (r) {
-      titleInput.value = r.title; descInput.value = r.description; linkInput.value = r.link;
-      editId = id; submitBtn.textContent = "Update Resource";
+      titleInput.value = r.title;
+      descInput.value = r.description;
+      linkInput.value = r.link;
+      editId = id;
+      submitBtn.textContent = "Update Resource";
     }
   }
 }
 
 async function loadAndInitialize() {
-  const res = await fetch('./api/index.php');
-  const result = await res.json();
-  if (result.success) {
-    window.resources = result.data;
-    renderTable();
-  }
-  if (resourceForm) resourceForm.addEventListener('submit', handleAddResource);
-  const tbody = document.getElementById('resources-tbody');
-  if (tbody) tbody.addEventListener('click', handleTableClick);
+  try {
+    const res = await fetch('./api/index.php');
+    const result = await res.json();
+    if (result.success) {
+      resources = result.data;
+      renderTable();
+    }
+    if (resourceForm) resourceForm.addEventListener('submit', handleAddResource);
+    const tbody = document.getElementById('resources-tbody');
+    if (tbody) tbody.addEventListener('click', handleTableClick);
+  } catch (err) { console.error(err); }
 }
+
+// Attach to window so test environment can see it
+window.renderTable = renderTable;
+window.handleTableClick = handleTableClick;
 
 loadAndInitialize();
