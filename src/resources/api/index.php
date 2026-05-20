@@ -7,28 +7,25 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 
-// Use the exact path to the instructor's db file
-require_once __DIR__ . '/../../common/db.php';
-
-// Get the database connection
-try {
-    $db = getDBConnection();
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
-    exit;
-}
+// Include the database connection file using the instructor's function
+require_once '../../common/db.php';
+$db = getDBConnection();
 
 $method = $_SERVER['REQUEST_METHOD'];
+$rawData = file_get_contents('php://input');
+$data = json_decode($rawData, true);
+
+// Parse query parameters
 $action = $_GET['action'] ?? null;
 $id = $_GET['id'] ?? null;
-$res_id = $_GET['resource_id'] ?? null;
-$data = json_decode(file_get_contents('php://input'), true);
+$resource_id = $_GET['resource_id'] ?? null;
+$comment_id = $_GET['comment_id'] ?? null;
 
-// Routing logic
+// ROUTING LOGIC
 try {
     if ($method === 'GET') {
-        if ($action === 'comments' && $res_id) {
-            getCommentsByResourceId($db, $res_id);
+        if ($action === 'comments' && $resource_id) {
+            getCommentsByResourceId($db, $resource_id);
         } elseif ($id) {
             getResourceById($db, $id);
         } else {
@@ -43,68 +40,85 @@ try {
     } elseif ($method === 'PUT') {
         updateResource($db, $data);
     } elseif ($method === 'DELETE') {
-        if ($action === 'delete_comment') {
-            deleteComment($db, $_GET['comment_id'] ?? null);
+        if ($action === 'delete_comment' && $comment_id) {
+            deleteComment($db, $comment_id);
         } else {
             deleteResource($db, $id);
         }
+    } else {
+        sendResponse(['success' => false, 'message' => 'Method Not Allowed'], 405);
     }
 } catch (Exception $e) {
     sendResponse(['success' => false, 'message' => $e->getMessage()], 500);
 }
 
-// Functions
+// ============================================================================
+// RESOURCE FUNCTIONS
+// ============================================================================
+
 function getAllResources($db) {
-    $stmt = $db->query("SELECT * FROM resources ORDER BY created_at DESC");
+    $search = $_GET['search'] ?? null;
+    $sql = "SELECT id, title, description, link, created_at FROM resources";
+    if ($search) {
+        $sql .= " WHERE title LIKE :search OR description LIKE :search";
+    }
+    $sql .= " ORDER BY created_at DESC";
+    $stmt = $db->prepare($sql);
+    if ($search) { $stmt->bindValue(':search', "%$search%"); }
+    $stmt->execute();
     sendResponse(['success' => true, 'data' => $stmt->fetchAll()]);
 }
 
-function getResourceById($db, $id) {
-    $stmt = $db->prepare("SELECT * FROM resources WHERE id = ?");
-    $stmt->execute([$id]);
+function getResourceById($db, $resourceId) {
+    $stmt = $db->prepare("SELECT id, title, description, link, created_at FROM resources WHERE id = ?");
+    $stmt->execute([$resourceId]);
     $res = $stmt->fetch();
     if ($res) sendResponse(['success' => true, 'data' => $res]);
-    else sendResponse(['success' => false, 'message' => 'Not found'], 404);
+    else sendResponse(['success' => false, 'message' => 'Resource not found.'], 404);
 }
 
 function createResource($db, $data) {
     $stmt = $db->prepare("INSERT INTO resources (title, description, link) VALUES (?, ?, ?)");
-    $stmt->execute([$data['title'] ?? '', $data['description'] ?? '', $data['link'] ?? '']);
-    sendResponse(['success' => true, 'id' => $db->lastInsertId()], 201);
+    $stmt->execute([$data['title'], $data['description'] ?? '', $data['link']]);
+    sendResponse(['success' => true, 'message' => 'Created', 'id' => $db->lastInsertId()], 201);
 }
 
 function updateResource($db, $data) {
     $stmt = $db->prepare("UPDATE resources SET title = ?, description = ?, link = ? WHERE id = ?");
     $stmt->execute([$data['title'], $data['description'], $data['link'], $data['id']]);
-    sendResponse(['success' => true, 'message' => 'Updated']);
+    sendResponse(['success' => true, 'message' => 'Resource updated successfully.']);
 }
 
-function deleteResource($db, $id) {
+function deleteResource($db, $resourceId) {
     $stmt = $db->prepare("DELETE FROM resources WHERE id = ?");
-    $stmt->execute([$id]);
-    sendResponse(['success' => true, 'message' => 'Deleted']);
+    $stmt->execute([$resourceId]);
+    sendResponse(['success' => true, 'message' => 'Resource deleted successfully.']);
 }
 
-function getCommentsByResourceId($db, $id) {
-    $stmt = $db->prepare("SELECT * FROM comments_resource WHERE resource_id = ? ORDER BY created_at ASC");
-    $stmt->execute([$id]);
+// ============================================================================
+// COMMENT FUNCTIONS
+// ============================================================================
+
+function getCommentsByResourceId($db, $resourceId) {
+    $stmt = $db->prepare("SELECT id, resource_id, author, text, created_at FROM comments_resource WHERE resource_id = ? ORDER BY created_at ASC");
+    $stmt->execute([$resourceId]);
     sendResponse(['success' => true, 'data' => $stmt->fetchAll()]);
 }
 
 function createComment($db, $data) {
     $stmt = $db->prepare("INSERT INTO comments_resource (resource_id, author, text) VALUES (?, ?, ?)");
     $stmt->execute([$data['resource_id'], $data['author'], $data['text']]);
-    sendResponse(['success' => true, 'id' => $db->lastInsertId()], 201);
+    sendResponse(['success' => true, 'message' => 'Comment added', 'id' => $db->lastInsertId()], 201);
 }
 
-function deleteComment($db, $id) {
+function deleteComment($db, $commentId) {
     $stmt = $db->prepare("DELETE FROM comments_resource WHERE id = ?");
-    $stmt->execute([$id]);
-    sendResponse(['success' => true, 'message' => 'Deleted']);
+    $stmt->execute([$commentId]);
+    sendResponse(['success' => true, 'message' => 'Comment deleted successfully.']);
 }
 
-function sendResponse($data, $status = 200) {
-    http_response_code($status);
+function sendResponse($data, $statusCode = 200) {
+    http_response_code($statusCode);
     echo json_encode($data);
     exit;
 }

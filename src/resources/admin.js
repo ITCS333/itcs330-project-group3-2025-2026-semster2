@@ -1,11 +1,17 @@
 let resources = [];
 let editId = null;
 
-function createResourceRow(res) {
+function createResourceRow(resource) {
   const tr = document.createElement('tr');
-  tr.innerHTML = `<td>${res.title}</td><td>${res.description || ''}</td><td>${res.link}</td>
-    <td><button class="edit-btn" data-id="${res.id}">Edit</button>
-    <button class="delete-btn" data-id="${res.id}">Delete</button></td>`;
+  tr.innerHTML = `
+    <td>${resource.title}</td>
+    <td>${resource.description}</td>
+    <td>${resource.link}</td>
+    <td>
+      <button class="edit-btn" data-id="${resource.id}">Edit</button>
+      <button class="delete-btn" data-id="${resource.id}">Delete</button>
+    </td>
+  `;
   return tr;
 }
 
@@ -13,7 +19,7 @@ function renderTable() {
   const tbody = document.getElementById('resources-tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
-  resources.forEach(r => tbody.appendChild(createResourceRow(r)));
+  resources.forEach(res => tbody.appendChild(createResourceRow(res)));
 }
 
 async function handleAddResource(event) {
@@ -21,19 +27,27 @@ async function handleAddResource(event) {
   const title = document.getElementById('resource-title').value;
   const description = document.getElementById('resource-description').value;
   const link = document.getElementById('resource-link').value;
-  const payload = { title, description, link };
 
   if (editId) {
-    payload.id = editId;
-    await fetch('./api/index.php', { method: 'PUT', body: JSON.stringify(payload) });
+    // PUT (Update)
+    await fetch('./api/index.php', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: editId, title, description, link })
+    });
     const idx = resources.findIndex(r => r.id == editId);
-    resources[idx] = payload;
+    resources[idx] = { id: editId, title, description, link };
     editId = null;
     document.getElementById('add-resource').textContent = "Add Resource";
   } else {
-    const res = await fetch('./api/index.php', { method: 'POST', body: JSON.stringify(payload) });
+    // POST (Add)
+    const res = await fetch('./api/index.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, description, link })
+    });
     const result = await res.json();
-    if (result.success) resources.push({ id: result.id, ...payload });
+    if (result.success) resources.push({ id: result.id, title, description, link });
   }
   document.getElementById('resource-form').reset();
   renderTable();
@@ -42,8 +56,9 @@ async function handleAddResource(event) {
 async function handleTableClick(event) {
   const id = event.target.dataset.id;
   if (event.target.classList.contains('delete-btn')) {
-    const res = await fetch(`./api/index.php?id=${id}`, { method: 'DELETE' });
-    if ((await res.json()).success) { resources = resources.filter(r => r.id != id); renderTable(); }
+    await fetch(`./api/index.php?id=${id}`, { method: 'DELETE' });
+    resources = resources.filter(r => r.id != id);
+    renderTable();
   } else if (event.target.classList.contains('edit-btn')) {
     const r = resources.find(res => res.id == id);
     document.getElementById('resource-title').value = r.title;
@@ -55,12 +70,18 @@ async function handleTableClick(event) {
 }
 
 async function loadAndInitialize() {
-  const res = await fetch('./api/index.php').then(r => r.json());
-  if (res.success) { resources = res.data; renderTable(); }
-  const form = document.getElementById('resource-form');
-  if (form) form.addEventListener('submit', handleAddResource);
-  const tbody = document.getElementById('resources-tbody');
-  if (tbody) tbody.addEventListener('click', handleTableClick);
+  try {
+    const res = await fetch('./api/index.php');
+    const result = await res.json();
+    if (result.success) {
+      resources = result.data;
+      renderTable();
+    }
+    document.getElementById('resource-form').addEventListener('submit', handleAddResource);
+    document.getElementById('resources-tbody').addEventListener('click', handleTableClick);
+  } catch (error) { console.error(error); }
 }
 
-if (document.getElementById('resources-tbody')) { loadAndInitialize(); }
+if (document.getElementById('resources-tbody')) {
+  loadAndInitialize();
+}

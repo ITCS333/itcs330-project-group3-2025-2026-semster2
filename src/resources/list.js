@@ -1,24 +1,34 @@
+const resourceListSection = document.getElementById('resource-list-section');
+
 function createResourceArticle(resource) {
   const article = document.createElement('article');
-  article.innerHTML = `<h2>${resource.title}</h2><p>${resource.description || ''}</p>
-    <a href="details.html?id=${resource.id}">View Resource & Discussion</a>`;
+  const h3 = document.createElement('h3');
+  h3.textContent = resource.title;
+  const p = document.createElement('p');
+  p.textContent = resource.description;
+  const a = document.createElement('a');
+  a.href = `details.html?id=${resource.id}`;
+  a.textContent = "View Resource & Discussion";
+  
+  article.appendChild(h3);
+  article.appendChild(p);
+  article.appendChild(a);
   return article;
 }
 
 async function loadResources() {
-  const section = document.getElementById('resource-list-section');
-  if (!section) return; // Safety for tests
   try {
-    const res = await fetch('./api/index.php');
-    const result = await res.json();
-    if (result.success) {
-      section.innerHTML = '';
-      result.data.forEach(r => section.appendChild(createResourceArticle(r)));
+    const response = await fetch('./api/index.php');
+    const result = await response.json();
+    if (result.success && resourceListSection) {
+      resourceListSection.innerHTML = '';
+      result.data.forEach(resource => {
+        resourceListSection.appendChild(createResourceArticle(resource));
+      });
     }
-  } catch (e) {}
+  } catch (error) { console.error(error); }
 }
 
-// Only run if the element exists (this passes Jest tests)
 if (document.getElementById('resource-list-section')) {
   loadResources();
 }

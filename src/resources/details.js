@@ -7,58 +7,76 @@ function getResourceIdFromURL() {
 }
 
 function renderResourceDetails(resource) {
-  const title = document.getElementById('resource-title');
-  if (title) title.textContent = resource.title;
-  const desc = document.getElementById('resource-description');
-  if (desc) desc.textContent = resource.description;
-  const link = document.getElementById('resource-link');
-  if (link) link.href = resource.link;
+  document.getElementById('resource-title').textContent = resource.title;
+  document.getElementById('resource-description').textContent = resource.description;
+  document.getElementById('resource-link').href = resource.link;
 }
 
 function createCommentArticle(comment) {
   const article = document.createElement('article');
-  article.innerHTML = `<p>${comment.text}</p><footer>Posted by: ${comment.author}</footer>`;
+  const p = document.createElement('p');
+  p.textContent = comment.text;
+  const footer = document.createElement('footer');
+  footer.textContent = `Posted by: ${comment.author}`;
+  article.appendChild(p);
+  article.appendChild(footer);
   return article;
 }
 
 function renderComments() {
-  const list = document.getElementById('comment-list');
-  if (!list) return;
-  list.innerHTML = '';
-  currentComments.forEach(c => list.appendChild(createCommentArticle(c)));
+  const container = document.getElementById('comment-list');
+  if (!container) return;
+  container.innerHTML = '';
+  currentComments.forEach(comment => {
+    container.appendChild(createCommentArticle(comment));
+  });
 }
 
 async function handleAddComment(event) {
   event.preventDefault();
-  const input = document.getElementById('new-comment');
-  const text = input.value.trim();
-  if (!text) return;
-  const res = await fetch('./api/index.php?action=comment', {
+  const textarea = document.getElementById('new-comment');
+  const commentText = textarea.value.trim();
+  if (!commentText) return;
+
+  const response = await fetch('./api/index.php?action=comment', {
     method: 'POST',
-    body: JSON.stringify({ resource_id: currentResourceId, author: 'Student', text: text })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      resource_id: currentResourceId,
+      author: 'Student',
+      text: commentText
+    })
   });
-  if ((await res.json()).success) {
-    currentComments.push({ author: 'Student', text: text });
+  const result = await response.json();
+  if (result.success) {
+    currentComments.push({ author: 'Student', text: commentText });
     renderComments();
-    input.value = '';
+    textarea.value = '';
   }
 }
 
 async function initializePage() {
   currentResourceId = getResourceIdFromURL();
-  const title = document.getElementById('resource-title');
-  if (!currentResourceId) { if(title) title.textContent = "Resource not found."; return; }
+  const titleElem = document.getElementById('resource-title');
+  if (!currentResourceId) { if(titleElem) titleElem.textContent = "Resource not found."; return; }
 
   try {
-    const [rRes, cRes] = await Promise.all([
+    const [resRes, comRes] = await Promise.all([
       fetch(`./api/index.php?id=${currentResourceId}`).then(r => r.json()),
       fetch(`./api/index.php?resource_id=${currentResourceId}&action=comments`).then(r => r.json())
     ]);
-    if (rRes.success) renderResourceDetails(rRes.data);
-    if (cRes.success) { currentComments = cRes.data; renderComments(); }
-    const form = document.getElementById('comment-form');
-    if (form) form.addEventListener('submit', handleAddComment);
-  } catch (e) {}
+
+    if (resRes.success) {
+      renderResourceDetails(resRes.data);
+      currentComments = comRes.data || [];
+      renderComments();
+      document.getElementById('comment-form').addEventListener('submit', handleAddComment);
+    } else {
+      if(titleElem) titleElem.textContent = "Resource not found.";
+    }
+  } catch (error) { console.error(error); }
 }
 
-if (document.getElementById('resource-title')) { initializePage(); }
+if (document.getElementById('resource-title')) {
+  initializePage();
+}
