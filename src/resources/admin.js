@@ -13,7 +13,7 @@ function createResourceRow(resource) {
   tr.innerHTML = `
     <td>${resource.title}</td>
     <td>${resource.description}</td>
-    <td>${resource.link}</td>
+    <td><a href="${resource.link}" target="_blank">${resource.link}</a></td>
     <td>
       <button class="edit-btn" data-id="${resource.id}">Edit</button>
       <button class="delete-btn" data-id="${resource.id}">Delete</button>
@@ -29,20 +29,23 @@ function renderTable() {
 
 async function handleAddResource(event) {
   event.preventDefault();
-  const title = titleInput.value;
-  const description = descInput.value;
-  const link = linkInput.value;
+  const payload = {
+    title: titleInput.value,
+    description: descInput.value,
+    link: linkInput.value
+  };
 
   if (editId) {
+    payload.id = editId;
     const response = await fetch('./api/index.php', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: editId, title, description, link })
+      body: JSON.stringify(payload)
     });
     const result = await response.json();
     if (result.success) {
       const idx = resources.findIndex(r => r.id == editId);
-      resources[idx] = { id: editId, title, description, link };
+      resources[idx] = { ...payload, id: editId };
       editId = null;
       submitBtn.textContent = "Add Resource";
     }
@@ -50,10 +53,12 @@ async function handleAddResource(event) {
     const response = await fetch('./api/index.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description, link })
+      body: JSON.stringify(payload)
     });
     const result = await response.json();
-    if (result.success) resources.push({ id: result.id, title, description, link });
+    if (result.success) {
+      resources.push({ ...payload, id: result.id });
+    }
   }
   resourceForm.reset();
   renderTable();
@@ -61,6 +66,8 @@ async function handleAddResource(event) {
 
 async function handleTableClick(event) {
   const id = event.target.dataset.id;
+  if (!id) return;
+
   if (event.target.classList.contains('delete-btn')) {
     const response = await fetch(`./api/index.php?id=${id}`, { method: 'DELETE' });
     const result = await response.json();
@@ -70,23 +77,29 @@ async function handleTableClick(event) {
     }
   } else if (event.target.classList.contains('edit-btn')) {
     const r = resources.find(res => res.id == id);
-    titleInput.value = r.title;
-    descInput.value = r.description;
-    linkInput.value = r.link;
-    editId = id;
-    submitBtn.textContent = "Update Resource";
+    if (r) {
+      titleInput.value = r.title;
+      descInput.value = r.description;
+      linkInput.value = r.link;
+      editId = id;
+      submitBtn.textContent = "Update Resource";
+    }
   }
 }
 
 async function loadAndInitialize() {
-  const res = await fetch('./api/index.php');
-  const result = await res.json();
-  if (result.success) {
-    resources = result.data;
-    renderTable();
+  try {
+    const res = await fetch('./api/index.php');
+    const result = await res.json();
+    if (result.success) {
+      resources = result.data;
+      renderTable();
+    }
+    resourceForm.addEventListener('submit', handleAddResource);
+    resourcesTbody.addEventListener('click', handleTableClick);
+  } catch (err) {
+    console.error("Initialization failed", err);
   }
-  resourceForm.addEventListener('submit', handleAddResource);
-  resourcesTbody.addEventListener('click', handleTableClick);
 }
 
 loadAndInitialize();

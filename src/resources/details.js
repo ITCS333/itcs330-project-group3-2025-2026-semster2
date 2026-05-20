@@ -1,12 +1,12 @@
 let currentResourceId = null;
 let currentComments = [];
 
-const titleElement = document.getElementById('resource-title');
-const descriptionElement = document.getElementById('resource-description');
-const linkElement = document.getElementById('resource-link');
-const commentListContainer = document.getElementById('comment-list');
+const titleEl = document.getElementById('resource-title');
+const descEl = document.getElementById('resource-description');
+const linkEl = document.getElementById('resource-link');
+const commentListEl = document.getElementById('comment-list');
 const commentForm = document.getElementById('comment-form');
-const commentInput = document.getElementById('new-comment');
+const newCommentInput = document.getElementById('new-comment');
 
 function getResourceIdFromURL() {
   const params = new URLSearchParams(window.location.search);
@@ -14,9 +14,9 @@ function getResourceIdFromURL() {
 }
 
 function renderResourceDetails(resource) {
-  titleElement.textContent = resource.title;
-  descriptionElement.textContent = resource.description;
-  linkElement.href = resource.link;
+  titleEl.textContent = resource.title;
+  descEl.textContent = resource.description;
+  linkEl.href = resource.link;
 }
 
 function createCommentArticle(comment) {
@@ -31,16 +31,16 @@ function createCommentArticle(comment) {
 }
 
 function renderComments() {
-  commentListContainer.innerHTML = '';
+  commentListEl.innerHTML = '';
   currentComments.forEach(comment => {
-    commentListContainer.appendChild(createCommentArticle(comment));
+    commentListEl.appendChild(createCommentArticle(comment));
   });
 }
 
 async function handleAddComment(event) {
   event.preventDefault();
-  const commentText = commentInput.value.trim();
-  if (!commentText) return;
+  const text = newCommentInput.value.trim();
+  if (!text) return;
 
   const response = await fetch('./api/index.php?action=comment', {
     method: 'POST',
@@ -48,33 +48,45 @@ async function handleAddComment(event) {
     body: JSON.stringify({
       resource_id: currentResourceId,
       author: 'Student',
-      text: commentText
+      text: text
     })
   });
+
   const result = await response.json();
   if (result.success) {
-    currentComments.push({ author: 'Student', text: commentText });
+    currentComments.push({ author: 'Student', text: text });
     renderComments();
-    commentInput.value = '';
+    newCommentInput.value = '';
   }
 }
 
 async function initializePage() {
   currentResourceId = getResourceIdFromURL();
-  if (!currentResourceId) { titleElement.textContent = "Resource not found."; return; }
+  if (!currentResourceId) {
+    titleEl.textContent = "Resource not found.";
+    return;
+  }
 
-  const [resRes, comRes] = await Promise.all([
-    fetch(`./api/index.php?id=${currentResourceId}`).then(r => r.json()),
-    fetch(`./api/index.php?resource_id=${currentResourceId}&action=comments`).then(r => r.json())
-  ]);
+  try {
+    // Standard requirement: Fetch both concurrently
+    const [resResp, commResp] = await Promise.all([
+      fetch(`./api/index.php?id=${currentResourceId}`),
+      fetch(`./api/index.php?resource_id=${currentResourceId}&action=comments`)
+    ]);
 
-  if (resRes.success) {
-    renderResourceDetails(resRes.data);
-    currentComments = comRes.data || [];
-    renderComments();
-    commentForm.addEventListener('submit', handleAddComment);
-  } else {
-    titleElement.textContent = "Resource not found.";
+    const resData = await resResp.json();
+    const commData = await commResp.json();
+
+    if (resData.success) {
+      renderResourceDetails(resData.data);
+      currentComments = commData.data || [];
+      renderComments();
+      commentForm.addEventListener('submit', handleAddComment);
+    } else {
+      titleEl.textContent = "Resource not found.";
+    }
+  } catch (err) {
+    titleEl.textContent = "Error loading resource.";
   }
 }
 
