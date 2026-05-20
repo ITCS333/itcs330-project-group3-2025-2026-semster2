@@ -138,6 +138,7 @@ async function handleAddWeek(event) {
     const result = await response.json();
 
     if (result.success) {
+
       weeks.push({
         id: result.id,
         title,
@@ -148,6 +149,7 @@ async function handleAddWeek(event) {
 
       renderTable();
       resetForm();
+
     } else {
       alert('Failed to add week');
     }
@@ -158,7 +160,9 @@ async function handleAddWeek(event) {
 }
 
 async function handleUpdateWeek(id, fields) {
+
   try {
+
     const response = await fetch('./api/index.php', {
       method: 'PUT',
       headers: {
@@ -173,6 +177,7 @@ async function handleUpdateWeek(id, fields) {
     const result = await response.json();
 
     if (result.success) {
+
       const index = weeks.findIndex(w => w.id === id);
 
       if (index !== -1) {
@@ -189,6 +194,7 @@ async function handleUpdateWeek(id, fields) {
 }
 
 async function handleTableClick(event) {
+
   const target = event.target;
 
   // DELETE
@@ -197,6 +203,7 @@ async function handleTableClick(event) {
     const id = parseInt(target.dataset.id, 10);
 
     try {
+
       const response = await fetch('./api/index.php?id=' + id, {
         method: 'DELETE'
       });
@@ -247,7 +254,11 @@ async function handleTableClick(event) {
       formHeading.textContent = 'Edit Week';
     }
 
-    if (weekForm) {
+    // FIX FOR JEST ERROR
+    if (
+      weekForm &&
+      typeof weekForm.scrollIntoView === 'function'
+    ) {
       weekForm.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
@@ -259,6 +270,7 @@ async function handleTableClick(event) {
 async function loadAndInitialize() {
 
   try {
+
     const response = await fetch('./api/index.php');
     const json = await response.json();
 
