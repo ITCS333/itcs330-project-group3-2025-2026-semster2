@@ -1,65 +1,84 @@
 /*
-  Requirement: Populate the "Weekly Course Breakdown" list page.
-
-  Instructions:
-  1. This file is already linked to `list.html` via:
-         <script src="list.js" defer></script>
-
-  2. In `list.html`, the <section id="week-list-section"> is the container
-     that this script populates.
-
-  3. Implement the TODOs below.
+  list.js — Populates the "Weekly Course Breakdown" list page.
+  Fetches all weeks from the API and renders one <article> per week.
 */
 
 // --- Element Selections ---
-// TODO: Select the section for the week list using its id 'week-list-section'.
+const weekListSection = document.getElementById('week-list-section');
 
 // --- Functions ---
 
 /**
- * TODO: Implement createWeekArticle.
+ * createWeekArticle
+ * Builds and returns an <article> element for a single week object.
  *
- * Parameters:
- *   week — one object from the API response with the shape:
- *     {
- *       id:          number,   // integer primary key from the weeks table
- *       title:       string,
- *       start_date:  string,   // "YYYY-MM-DD" — matches the SQL column name
- *       description: string,
- *       links:       string[]  // already decoded array of URL strings
- *     }
- *
- * Returns:
- *   An <article> element matching the structure shown in list.html:
- *     <article>
- *       <h2>{title}</h2>
- *       <p>Starts on: {start_date}</p>
- *       <p>{description}</p>
- *       <a href="details.html?id={id}">View Details & Discussion</a>
- *     </article>
- *
- * Important: the href MUST be "details.html?id=<id>" (integer id from
- * the weeks table) so that details.js can read the id from the URL.
+ * @param {Object} week - { id, title, start_date, description, links }
+ * @returns {HTMLElement} article
  */
 function createWeekArticle(week) {
-  // ... your implementation here ...
+  const article = document.createElement('article');
+
+  const h2 = document.createElement('h2');
+  h2.textContent = week.title;
+
+  const dateP = document.createElement('p');
+  dateP.textContent = 'Starts on: ' + week.start_date;
+
+  const descP = document.createElement('p');
+  descP.textContent = week.description;
+
+  const link = document.createElement('a');
+  link.href = 'details.html?id=' + week.id;
+  link.textContent = 'View Details & Discussion';
+
+  article.appendChild(h2);
+  article.appendChild(dateP);
+  article.appendChild(descP);
+  article.appendChild(link);
+
+  // Stagger animation delay per card
+  article.style.animationDelay = '0ms'; // overridden in loadWeeks
+
+  return article;
 }
 
 /**
- * TODO: Implement loadWeeks (async).
- *
- * It should:
- * 1. Use fetch() to GET data from './api/index.php'.
- *    The API returns JSON in the shape:
- *      { success: true, data: [ ...week objects ] }
- * 2. Parse the JSON response.
- * 3. Clear any existing content from the list section.
- * 4. Loop through the data array. For each week object:
- *    - Call createWeekArticle(week).
- *    - Append the returned <article> to the list section.
+ * loadWeeks
+ * Fetches all weeks from the API and populates #week-list-section.
  */
 async function loadWeeks() {
-  // ... your implementation here ...
+  try {
+    const response = await fetch('./api/index.php');
+
+    if (!response.ok) {
+      throw new Error('Server returned ' + response.status);
+    }
+
+    const json = await response.json();
+
+    if (!json.success) {
+      throw new Error(json.message || 'Failed to load weeks.');
+    }
+
+    // Clear loading placeholder
+    weekListSection.innerHTML = '';
+
+    if (json.data.length === 0) {
+      weekListSection.innerHTML = '<p class="loading">No weeks found.</p>';
+      return;
+    }
+
+    json.data.forEach((week, index) => {
+      const article = createWeekArticle(week);
+      // Stagger each card's fade-in
+      article.style.animationDelay = (index * 60) + 'ms';
+      weekListSection.appendChild(article);
+    });
+
+  } catch (error) {
+    weekListSection.innerHTML =
+      '<p class="error">Could not load weeks: ' + error.message + '</p>';
+  }
 }
 
 // --- Initial Page Load ---
