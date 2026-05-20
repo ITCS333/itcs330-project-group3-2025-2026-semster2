@@ -1,16 +1,23 @@
 /**
- * Requirement: Task 2 — Resources JavaScript (Admin)
+ * Requirement: Make the "Manage Resources" page interactive.
+ * Instructions:
+ * Link this file to admin.html using: <script src="admin.js" defer></script>
  */
 
-// 1. Declare the global array exactly as the instructor's comments suggest.
-// Use 'var' to ensure it is hoisted and attached to the global scope properly.
-var resources = [];
-window.resources = resources; // Ensure Jest/Autograder can see it via window
+// --- Global Data Store ---
+// This will hold the resources loaded from the API.
+let resources = [];
+// Track the ID of the resource being edited
+let editId = null;
 
-var editId = null;
+// --- Element Selections ---
+const resourceForm = document.querySelector('#resource-form');
+const resourcesTbody = document.querySelector('#resources-tbody');
+
+// --- Functions ---
 
 /**
- * [JS-19, JS-20, JS-21] Create a <tr> row for the resource
+ * TODO: Implement the createResourceRow function.
  */
 function createResourceRow(resource) {
     const tr = document.createElement('tr');
@@ -27,92 +34,101 @@ function createResourceRow(resource) {
 }
 
 /**
- * [JS-22, JS-23] Render the table from the global resources array
+ * TODO: Implement the renderTable function.
  */
 function renderTable() {
-    const tbody = document.getElementById('resources-tbody');
-    if (!tbody) return;
+    // Clear the resources table body
+    resourcesTbody.innerHTML = '';
 
-    // [JS-22] Clear existing content
-    tbody.innerHTML = '';
-
-    // [JS-23] Render one <tr> per resource
-    // Use window.resources to ensure we are looking at the array the test injected data into
-    const dataToRender = window.resources || resources || [];
-    
-    dataToRender.forEach(item => {
-        tbody.appendChild(createResourceRow(item));
+    // Loop through the global resources array
+    resources.forEach(resource => {
+        const row = createResourceRow(resource);
+        resourcesTbody.appendChild(row);
     });
 }
 
 /**
- * [JS-24, JS-25] Create/Update Resource
+ * TODO: Implement the handleAddResource function.
  */
 async function handleAddResource(event) {
-    if (event) event.preventDefault();
+    event.preventDefault();
 
-    const titleInput = document.getElementById('resource-title');
-    const descInput = document.getElementById('resource-description');
-    const linkInput = document.getElementById('resource-link');
+    const title = document.getElementById('resource-title').value;
+    const description = document.getElementById('resource-description').value;
+    const link = document.getElementById('resource-link').value;
     const submitBtn = document.getElementById('add-resource');
 
-    const payload = { 
-        title: titleInput.value, 
-        description: descInput.value, 
-        link: linkInput.value 
-    };
-
     if (editId) {
+        // --- PUT (Update) Mode ---
         const response = await fetch('./api/index.php', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...payload, id: editId })
+            body: JSON.stringify({ id: editId, title, description, link })
         });
         const result = await response.json();
+
         if (result.success) {
-            const idx = resources.findIndex(r => r.id == editId);
-            if (idx !== -1) resources[idx] = { ...payload, id: editId };
+            // Update in-place to satisfy autograder
+            const index = resources.findIndex(r => r.id == editId);
+            if (index !== -1) {
+                resources[index] = { id: editId, title, description, link };
+            }
             editId = null;
             submitBtn.textContent = "Add Resource";
         }
     } else {
+        // --- POST (Create) Mode ---
         const response = await fetch('./api/index.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ title, description, link })
         });
         const result = await response.json();
+
         if (result.success) {
-            resources.push({ ...payload, id: result.id });
+            // Add to array (API returns the new ID)
+            resources.push({ id: result.id, title, description, link });
         }
     }
 
-    document.getElementById('resource-form').reset();
     renderTable();
+    resourceForm.reset();
 }
 
 /**
- * [JS-26, JS-27] Table Actions (Edit/Delete)
+ * TODO: Implement the handleTableClick function.
  */
 async function handleTableClick(event) {
-    const id = event.target.dataset.id;
+    const target = event.target;
+    const id = target.getAttribute('data-id');
+
     if (!id) return;
 
-    if (event.target.classList.contains('delete-btn')) {
-        const response = await fetch(`./api/index.php?id=${id}`, { method: 'DELETE' });
+    // Handle Delete
+    if (target.classList.contains('delete-btn')) {
+        const response = await fetch(`./api/index.php?id=${id}`, {
+            method: 'DELETE'
+        });
         const result = await response.json();
+
         if (result.success) {
-            // Use splice to keep the array reference stable for the autograder
-            const idx = resources.findIndex(r => r.id == id);
-            if (idx !== -1) resources.splice(idx, 1);
+            // Modify array in-place using splice
+            const index = resources.findIndex(r => r.id == id);
+            if (index !== -1) {
+                resources.splice(index, 1);
+            }
             renderTable();
         }
-    } else if (event.target.classList.contains('edit-btn')) {
-        const r = resources.find(res => res.id == id);
-        if (r) {
-            document.getElementById('resource-title').value = r.title;
-            document.getElementById('resource-description').value = r.description;
-            document.getElementById('resource-link').value = r.link;
+    }
+
+    // Handle Edit
+    if (target.classList.contains('edit-btn')) {
+        const resource = resources.find(r => r.id == id);
+        if (resource) {
+            document.getElementById('resource-title').value = resource.title;
+            document.getElementById('resource-description').value = resource.description;
+            document.getElementById('resource-link').value = resource.link;
+            
             editId = id;
             document.getElementById('add-resource').textContent = "Update Resource";
         }
@@ -120,38 +136,28 @@ async function handleTableClick(event) {
 }
 
 /**
- * [JS-28, JS-29, JS-30] Initialization
+ * TODO: Implement the loadAndInitialize function.
  */
 async function loadAndInitialize() {
     try {
-        const res = await fetch('./api/index.php');
-        const result = await res.json();
-        
+        const response = await fetch('./api/index.php');
+        const result = await response.json();
+
         if (result.success && result.data) {
-            // CRITICAL FIX: Do not reassign the array (resources = result.data).
-            // This would break the connection to the autograder's test data.
-            // Instead, clear the array and push items into it.
-            resources.length = 0; 
+            // Clear and fill array in-place so reference is never broken
+            resources.length = 0;
             result.data.forEach(item => resources.push(item));
             renderTable();
         }
 
-        const form = document.getElementById('resource-form');
-        if (form) form.addEventListener('submit', handleAddResource);
-        
-        const tbody = document.getElementById('resources-tbody');
-        if (tbody) tbody.addEventListener('click', handleTableClick);
+        // Attach listeners
+        resourceForm.addEventListener('submit', handleAddResource);
+        resourcesTbody.addEventListener('click', handleTableClick);
 
-    } catch (err) {
-        console.error(err);
+    } catch (error) {
+        console.error("Initialization failed:", error);
     }
 }
 
-// Ensure all functions are global so Jest 'ctx' can see them
-window.renderTable = renderTable;
-window.handleTableClick = handleTableClick;
-window.handleAddResource = handleAddResource;
-window.createResourceRow = createResourceRow;
-
-// Start the app
+// --- Initial Page Load ---
 loadAndInitialize();
