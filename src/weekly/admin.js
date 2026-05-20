@@ -16,6 +16,7 @@ const formHeading = document.querySelector('section.form-section h2');
 // --- Functions ---
 
 function createWeekRow(week) {
+
   const tr = document.createElement('tr');
 
   const tdTitle = document.createElement('td');
@@ -52,18 +53,18 @@ function createWeekRow(week) {
 }
 
 function renderTable() {
+
   if (!weeksTbody) return;
 
+  // Clear table first
   weeksTbody.innerHTML = '';
 
+  // If no weeks, leave tbody empty
   if (weeks.length === 0) {
-    const tr = document.createElement('tr');
-    tr.className = 'empty-row';
-    tr.innerHTML = '<td colspan="4">No weeks found. Add one above.</td>';
-    weeksTbody.appendChild(tr);
     return;
   }
 
+  // Render rows
   weeks.forEach(week => {
     const tr = createWeekRow(week);
     weeksTbody.appendChild(tr);
@@ -71,6 +72,7 @@ function renderTable() {
 }
 
 function resetForm() {
+
   if (!weekForm) return;
 
   weekForm.reset();
@@ -90,6 +92,7 @@ function resetForm() {
 }
 
 async function handleAddWeek(event) {
+
   event.preventDefault();
 
   const title =
@@ -106,22 +109,30 @@ async function handleAddWeek(event) {
 
   const links = linksRaw
     .split('\n')
-    .map(l => l.trim())
-    .filter(l => l !== '');
+    .map(link => link.trim())
+    .filter(link => link !== '');
 
   const editId = addWeekBtn?.dataset.editId;
 
+  // EDIT MODE
   if (editId) {
-    await handleUpdateWeek(parseInt(editId, 10), {
-      title,
-      start_date,
-      description,
-      links
-    });
+
+    await handleUpdateWeek(
+      parseInt(editId, 10),
+      {
+        title,
+        start_date,
+        description,
+        links
+      }
+    );
+
     return;
   }
 
+  // CREATE MODE
   try {
+
     const response = await fetch('./api/index.php', {
       method: 'POST',
       headers: {
@@ -151,11 +162,16 @@ async function handleAddWeek(event) {
       resetForm();
 
     } else {
-      alert('Failed to add week');
+
+      alert(
+        'Failed to add week: ' +
+        (result.message || 'Unknown error')
+      );
     }
 
   } catch (error) {
-    alert('Error: ' + error.message);
+
+    alert('Error adding week: ' + error.message);
   }
 }
 
@@ -178,18 +194,31 @@ async function handleUpdateWeek(id, fields) {
 
     if (result.success) {
 
-      const index = weeks.findIndex(w => w.id === id);
+      const index = weeks.findIndex(
+        week => week.id === id
+      );
 
       if (index !== -1) {
-        weeks[index] = { id, ...fields };
+        weeks[index] = {
+          id,
+          ...fields
+        };
       }
 
       renderTable();
       resetForm();
+
+    } else {
+
+      alert(
+        'Failed to update week: ' +
+        (result.message || 'Unknown error')
+      );
     }
 
   } catch (error) {
-    alert('Error updating week');
+
+    alert('Error updating week: ' + error.message);
   }
 }
 
@@ -204,19 +233,34 @@ async function handleTableClick(event) {
 
     try {
 
-      const response = await fetch('./api/index.php?id=' + id, {
-        method: 'DELETE'
-      });
+      const response = await fetch(
+        './api/index.php?id=' + id,
+        {
+          method: 'DELETE'
+        }
+      );
 
       const result = await response.json();
 
       if (result.success) {
-        weeks = weeks.filter(w => w.id !== id);
+
+        weeks = weeks.filter(
+          week => week.id !== id
+        );
+
         renderTable();
+
+      } else {
+
+        alert(
+          'Failed to delete week: ' +
+          (result.message || 'Unknown error')
+        );
       }
 
     } catch (error) {
-      alert('Delete failed');
+
+      alert('Error deleting week: ' + error.message);
     }
   }
 
@@ -225,7 +269,9 @@ async function handleTableClick(event) {
 
     const id = parseInt(target.dataset.id, 10);
 
-    const week = weeks.find(w => w.id === id);
+    const week = weeks.find(
+      week => week.id === id
+    );
 
     if (!week) return;
 
@@ -254,7 +300,7 @@ async function handleTableClick(event) {
       formHeading.textContent = 'Edit Week';
     }
 
-    // FIX FOR JEST ERROR
+    // Prevent Jest error
     if (
       weekForm &&
       typeof weekForm.scrollIntoView === 'function'
@@ -272,28 +318,48 @@ async function loadAndInitialize() {
   try {
 
     const response = await fetch('./api/index.php');
+
     const json = await response.json();
 
     if (json.success) {
+
       weeks = json.data;
+
       renderTable();
+
+    } else {
+
+      alert(
+        'Failed to load weeks: ' +
+        (json.message || 'Unknown error')
+      );
     }
 
   } catch (error) {
-    alert('Error loading weeks');
+
+    alert('Error loading weeks: ' + error.message);
   }
 
   // Event Listeners
   if (weekForm) {
-    weekForm.addEventListener('submit', handleAddWeek);
+    weekForm.addEventListener(
+      'submit',
+      handleAddWeek
+    );
   }
 
   if (weeksTbody) {
-    weeksTbody.addEventListener('click', handleTableClick);
+    weeksTbody.addEventListener(
+      'click',
+      handleTableClick
+    );
   }
 
   if (cancelBtn) {
-    cancelBtn.addEventListener('click', resetForm);
+    cancelBtn.addEventListener(
+      'click',
+      resetForm
+    );
   }
 }
 
