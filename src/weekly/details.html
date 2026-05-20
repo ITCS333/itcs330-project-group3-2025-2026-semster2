@@ -1,100 +1,305 @@
-<!--
-  Requirement: Create the Dedicated Page for a Single Week
-
-  Instructions:
-  This page displays the full details for one week and allows students
-  to read and post discussion comments.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- TODO: Add <meta> tags for charset (UTF-8) and viewport
-         (width=device-width, initial-scale=1.0). -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Week Details</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
-    <!-- TODO: Add a <title>, e.g., "Week Details". -->
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <!-- TODO: Link to your CSS framework or stylesheet. -->
+        :root {
+            --bg: #ffffff;
+            --surface: #f4f4f8;
+            --surface2: #eaeaf0;
+            --border: #d1d5e0;
+            --accent: #8b5cf6;
+            --accent2: #ff6b6b;
+            --text: #1a1d2e;
+            --muted: #6b7280;
+        }
 
-    <!-- Required: link details.js with defer. -->
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #f9f9fb;
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 2.5rem 2rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -80px; left: -40px;
+            width: 300px; height: 200px;
+            background: radial-gradient(ellipse, rgba(139,92,246,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        header a.back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            transition: color 0.2s;
+        }
+        header a.back:hover { color: var(--accent); }
+
+        header h1#week-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(1.5rem, 4vw, 2.4rem);
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #7c3aed, #c4b5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        main {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* ── Week Info Article ── */
+        article.week-info {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            animation: fadeUp 0.35s ease both;
+        }
+
+        #week-start-date {
+            font-size: 0.82rem;
+            color: var(--accent);
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        article.week-info h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        #week-description {
+            font-size: 0.95rem;
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        #week-links-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        #week-links-list li a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--accent);
+            font-size: 0.88rem;
+            text-decoration: none;
+            word-break: break-all;
+            transition: opacity 0.2s;
+        }
+        #week-links-list li a:hover { opacity: 0.75; text-decoration: underline; }
+        #week-links-list li a::before { content: '↗'; font-size: 0.8rem; }
+
+        /* ── Discussion Section ── */
+        #discussion-forum {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            animation: fadeUp 0.4s 0.1s ease both;
+        }
+
+        #discussion-forum > h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+            border-left: 3px solid var(--accent);
+            padding-left: 0.75rem;
+        }
+
+        #comment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        /* Comment articles injected by details.js */
+        #comment-list article {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        #comment-list article p {
+            font-size: 0.92rem;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        #comment-list article footer {
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        .no-comments {
+            background: linear-gradient(135deg, #7c3aed, #c4b5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        /* ── Comment Form ── */
+        #comment-form {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.75rem 2rem;
+        }
+
+        #comment-form fieldset {
+            border: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        #comment-form legend {
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        #comment-form label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        #new-comment {
+            width: 100%;
+            min-height: 100px;
+            background: #f9f9fb;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.92rem;
+            resize: vertical;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        #new-comment:focus {
+            border-color: var(--accent);
+        }
+
+        #comment-form button[type="submit"] {
+            align-self: flex-start;
+            padding: 0.55rem 1.4rem;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+        #comment-form button[type="submit"]:hover {
+            opacity: 0.88;
+            transform: translateY(-1px);
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
     <script src="details.js" defer></script>
 </head>
 <body>
 
-    <!-- TODO: Create a <header>.
-         Inside it, add an <h1 id="week-title">.
-         details.js will set its textContent to the week's title.
-         Leave it empty for now. -->
+    <header>
+        <a class="back" href="list.html">← Back to all weeks</a>
+        <h1 id="week-title">Loading…</h1>
+    </header>
 
-    <!-- TODO: Create the <main> content area. -->
+    <main>
 
-        <!-- ============================================================
-             Section 1: Weekly Information
-             ============================================================ -->
-        <!-- TODO: Use an <article> to display the main weekly information. -->
+        <!-- Section 1: Weekly Information -->
+        <article class="week-info">
+            <p id="week-start-date"></p>
 
-            <!-- TODO: Add a <p id="week-start-date">.
-                 details.js will set it to "Starts on: YYYY-MM-DD"
-                 using the start_date column from the weeks table. -->
+            <h2>Description &amp; Notes</h2>
+            <p id="week-description"></p>
 
-            <!-- TODO: Add a <h2> "Description & Notes". -->
+            <h2>Exercises &amp; Resources</h2>
+            <ul id="week-links-list"></ul>
+        </article>
 
-            <!-- TODO: Add a <p id="week-description">.
-                 details.js will set its textContent to the week's
-                 description from the weeks table. -->
+        <!-- Section 2: Discussion Forum -->
+        <section id="discussion-forum">
+            <h2>Discussion</h2>
 
-            <!-- TODO: Add a <h2> "Exercises & Resources". -->
+            <!-- 2.1 Existing comments -->
+            <div id="comment-list"></div>
 
-            <!-- TODO: Add a <ul id="week-links-list">.
-                 details.js will populate this list from the links
-                 column in the weeks table. That column is a JSON-encoded
-                 array of URL strings. Each URL becomes a <li><a> item.
-                 Leave the list empty here. -->
+            <!-- 2.2 Add a comment -->
+            <form id="comment-form" action="#">
+                <fieldset>
+                    <legend>Leave a Comment</legend>
+                    <label for="new-comment">Your comment</label>
+                    <textarea id="new-comment" required placeholder="Write your comment here…"></textarea>
+                    <button type="submit">Post Comment</button>
+                </fieldset>
+            </form>
+        </section>
 
-        <!-- End of <article> -->
+    </main>
 
-
-        <!-- ============================================================
-             Section 2: Discussion Forum
-             ============================================================ -->
-        <!-- TODO: Create a <section id="discussion-forum">. -->
-
-            <!-- TODO: Add a <h2> "Discussion". -->
-
-            <!-- Subsection 2.1: Existing Comments -->
-            <!-- TODO: Add a <div id="comment-list">.
-                 details.js will inject one <article> per comment here.
-                 Each comment article follows this structure:
-
-                 <article>
-                     <p>Comment text goes here.</p>
-                     <footer>Posted by: Author Name</footer>
-                 </article>
-
-                 Comments come from the comments_week table
-                 (columns: id, week_id, author, text, created_at).
-                 Leave the div empty here. -->
-
-            <!-- Subsection 2.2: Add a Comment Form -->
-            <!-- TODO: Create a <form id="comment-form"> (action="#").
-                 The id is required by details.js. -->
-
-                <!-- TODO: Use a <fieldset> to group the controls. -->
-                    <!-- TODO: Add a <legend>, e.g., "Leave a Comment". -->
-
-                    <!-- TODO: Add a <label> and <textarea> for the comment.
-                         - label for="new-comment"
-                         - textarea id="new-comment", required
-                         - The id must be exactly "new-comment" as
-                           details.js reads this element by that id. -->
-
-                    <!-- TODO: Add a submit <button>.
-                         - type="submit"
-                         - Text: "Post Comment" -->
-                <!-- End of <fieldset> -->
-            <!-- End of <form> -->
-
-        <!-- End of <section#discussion-forum> -->
-
-    <!-- End of <main> -->
 </body>
 </html>

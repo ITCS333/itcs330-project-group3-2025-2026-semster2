@@ -64,7 +64,7 @@ function createAssignmentArticle(assignment) {
   description.textContent= assignment.description;
   let link= document.createElement("a");
   link.href= "details.html?id=" + assignment.id;
-  link.textContent= "View details and discussion";
+  link.textContent= "View Details & Discussion";
   article.appendChild(title);
   article.appendChild(dueDate);
   article.appendChild(description);

@@ -70,11 +70,11 @@ function createAssignmentRow(assignment) {
   let action_1= document.createElement("td");
   let editBtn=document.createElement("button");
   editBtn.textContent= "Edit"; 
-  editBtn.className= "edit-btn btn btn-warning btn-sm";
+  editBtn.className= "edit-btn";
   editBtn.dataset.id= assignment.id;
   let delBtn=document.createElement("button");
   delBtn.textContent= "Delete"; 
-  delBtn.className= "delete-btn btn btn-danger btn-sm";
+  delBtn.className= "delete-btn";
   delBtn.dataset.id= assignment.id;
 
   action_1.appendChild(editBtn);

@@ -94,7 +94,8 @@ function renderAssignmentDetails(assignment) {
   assignmentDueDate.textContent= "Due: " + assignment.due_date;
   assignmentDescription.textContent = assignment.description;
   assignmentFilesList.innerHTML= "";
-  assignment.files.forEach(function(url){
+  let files = assignment.files || [];
+  files.forEach(function(url){
     let lItem= document.createElement("li");
     let aLink= document.createElement("a");
     aLink.href= url;
@@ -248,3 +249,4 @@ async function initializePage() {
 
 // --- Initial Page Load ---
 initializePage();
+
