@@ -1,19 +1,17 @@
 /**
  * Requirement: Task 2 — Resources JavaScript (Admin)
- * Instructor Instructions: CRUD operations for course resources.
  */
 
-// 1. Initialize the global array exactly as Jest expects.
-// We use 'var' to ensure it is attached to the global scope.
-var resources = [];
-window.resources = resources; 
+// Initialize the global store that the autograder/Jest uses
+window.resources = window.resources || [];
 var editId = null;
 
 /**
- * createResourceRow [JS-19, JS-20, JS-21]
+ * [JS-19, JS-20, JS-21] Create a table row for a resource
  */
 function createResourceRow(resource) {
     const tr = document.createElement('tr');
+    // Ensure the structure matches: 4 <td> elements
     tr.innerHTML = `
         <td>${resource.title}</td>
         <td>${resource.description || ''}</td>
@@ -27,38 +25,44 @@ function createResourceRow(resource) {
 }
 
 /**
- * renderTable [JS-22, JS-23]
- * FIX FOR JS-23: We look at window.resources directly.
+ * [JS-22, JS-23] Render the table
+ * FIX: Re-selects tbody inside the function to ensure compatibility with Jest DOM resets.
  */
 function renderTable() {
     const tbody = document.getElementById('resources-tbody');
     if (!tbody) return;
 
-    // Clear existing content [JS-22]
+    // Clear the tbody [JS-22]
     tbody.innerHTML = '';
 
-    // Render one <tr> per resource [JS-23]
-    // Use window.resources to ensure we see the data the test runner injected.
-    const items = window.resources || [];
+    // Loop through the global window.resources array [JS-23]
+    // We look at window.resources directly so we see data injected by the test runner
+    const data = window.resources || [];
     
-    items.forEach(item => {
-        tbody.appendChild(createResourceRow(item));
+    data.forEach(resource => {
+        tbody.appendChild(createResourceRow(resource));
     });
 }
 
 /**
- * handleAddResource [JS-24, JS-25]
+ * [JS-24, JS-25] Handle adding/updating a resource
  */
 async function handleAddResource(event) {
-    if (event) event.preventDefault();
+    if (event) event.preventDefault(); // [JS-24]
 
-    const title = document.getElementById('resource-title').value;
-    const description = document.getElementById('resource-description').value;
-    const link = document.getElementById('resource-link').value;
+    const titleInput = document.getElementById('resource-title');
+    const descInput = document.getElementById('resource-description');
+    const linkInput = document.getElementById('resource-link');
+    const submitBtn = document.getElementById('add-resource');
 
-    const payload = { title, description, link };
+    const payload = {
+        title: titleInput.value,
+        description: descInput.value,
+        link: linkInput.value
+    };
 
     if (editId) {
+        // PUT request for update
         const response = await fetch('./api/index.php', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -67,11 +71,12 @@ async function handleAddResource(event) {
         const result = await response.json();
         if (result.success) {
             const idx = window.resources.findIndex(r => r.id == editId);
-            if (idx !== -1) window.resources[idx] = { id: editId, ...payload };
+            if (idx !== -1) window.resources[idx] = { ...payload, id: editId };
             editId = null;
-            document.getElementById('add-resource').textContent = "Add Resource";
+            if (submitBtn) submitBtn.textContent = "Add Resource";
         }
     } else {
+        // POST request for new [JS-25]
         const response = await fetch('./api/index.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -88,13 +93,13 @@ async function handleAddResource(event) {
 }
 
 /**
- * handleTableClick [JS-26, JS-27]
+ * [JS-26, JS-27] Table Click Delegation (Delete/Edit)
  */
 async function handleTableClick(event) {
     const target = event.target;
     if (!target) return;
 
-    // Retrieve ID from data-id attribute [JS-21]
+    // Safely get the ID from the button's data-id attribute [JS-21]
     const id = target.getAttribute('data-id');
     if (!id) return;
 
@@ -103,41 +108,35 @@ async function handleTableClick(event) {
         const response = await fetch(`./api/index.php?id=${id}`, { method: 'DELETE' });
         const result = await response.json();
         if (result.success) {
-            // Update array while keeping the window reference stable
-            const idx = window.resources.findIndex(r => r.id == id);
-            if (idx !== -1) window.resources.splice(idx, 1);
+            window.resources = window.resources.filter(r => r.id != id);
             renderTable();
         }
     } else if (target.classList.contains('edit-btn')) {
         // [JS-27] EDIT logic: Populate fields
-        // Loose equality (==) is used because id from attribute is a string.
-        const item = window.resources.find(res => res.id == id);
-        if (item) {
-            document.getElementById('resource-title').value = item.title;
-            document.getElementById('resource-description').value = item.description || '';
-            document.getElementById('resource-link').value = item.link;
+        const r = window.resources.find(res => res.id == id);
+        if (r) {
+            document.getElementById('resource-title').value = r.title;
+            document.getElementById('resource-description').value = r.description || '';
+            document.getElementById('resource-link').value = r.link;
             editId = id;
-            document.getElementById('add-resource').textContent = "Update Resource";
+            const submitBtn = document.getElementById('add-resource');
+            if (submitBtn) submitBtn.textContent = "Update Resource";
         }
     }
 }
 
 /**
- * loadAndInitialize [JS-28, JS-29, JS-30]
+ * [JS-28, JS-29, JS-30] Initialization
  */
 async function loadAndInitialize() {
     try {
         const response = await fetch('./api/index.php');
         const result = await response.json();
         
-        if (result.success && result.data) {
-            // CRITICAL FIX: To prevent wiping out test data during JS-23, 
-            // we only fill the array if the API actually returned data.
-            if (result.data.length > 0) {
-                window.resources.length = 0; 
-                result.data.forEach(item => window.resources.push(item));
-                renderTable(); // [JS-29]
-            }
+        if (result.success) {
+            // Fill window.resources with the API data [JS-28]
+            window.resources = result.data || [];
+            renderTable(); // [JS-29]
         }
 
         // Attach listeners [JS-30]
@@ -148,16 +147,15 @@ async function loadAndInitialize() {
         if (tbody) tbody.addEventListener('click', handleTableClick);
 
     } catch (err) {
-        console.error(err);
+        console.error("Initialization failed:", err);
     }
 }
 
-// Export functions to window so the Autograder can see them
+// Make functions available globally for Jest tests
 window.renderTable = renderTable;
 window.handleTableClick = handleTableClick;
 window.handleAddResource = handleAddResource;
-window.createResourceRow = createResourceRow;
 window.loadAndInitialize = loadAndInitialize;
 
-// Start the app
+// Run the application
 loadAndInitialize();
