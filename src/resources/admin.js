@@ -1,6 +1,3 @@
-/**
- * Requirement: Task 2 — Resources JavaScript (Admin)
- */
 
 // Initialize global store
 window.resources = window.resources || [];
@@ -178,14 +175,14 @@ async function handleTableClick(event) {
 
     }
 
-    // EDIT
+
     else if (target.classList.contains('edit-btn')) {
 
         let resource = window.resources.find(
             res => String(res.id) === String(id)
         );
 
-        // Fallback for Jest/autograder tests
+  
         if (!resource) {
 
             const row = target.closest('tr');
